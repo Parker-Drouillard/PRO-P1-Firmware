@@ -1,0 +1,7 @@
+PRIORITIES:
+we don't have any yet. Just a general ledger. Maybe we can sort them once it gets out of hand?
+
+
+in Marlin_main.cpp
+    G command handler:
+    G0&G1: Someone destroyed support for filament sensor. Need to add that back in to check. 
