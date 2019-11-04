@@ -59,11 +59,11 @@ float current_temperature[EXTRUDERS] = { 0.0 };
 #endif //AMBIENT_THERMISTOR
 
 #ifdef VOLT_PWR_PIN
-int current_voltage_raw_pwr = 0;
+  int current_voltage_raw_pwr = 0;
 #endif
 
 #ifdef VOLT_BED_PIN
-int current_voltage_raw_bed = 0;
+  int current_voltage_raw_bed = 0;
 #endif
 
 int current_temperature_bed_raw = 0;
@@ -1080,11 +1080,11 @@ void tp_init()
 #if (EXTRUDERS > 1) && defined(HEATER_1_MINTEMP)
   minttemp[1] = HEATER_1_MINTEMP;
   while(analog2temp(minttemp_raw[1], 1) < HEATER_1_MINTEMP) {
-#if HEATER_1_RAW_LO_TEMP < HEATER_1_RAW_HI_TEMP
-    minttemp_raw[1] += OVERSAMPLENR;
-#else
-    minttemp_raw[1] -= OVERSAMPLENR;
-#endif
+    #if HEATER_1_RAW_LO_TEMP < HEATER_1_RAW_HI_TEMP
+        minttemp_raw[1] += OVERSAMPLENR;
+    #else
+        minttemp_raw[1] -= OVERSAMPLENR;
+    #endif
   }
 #endif // MINTEMP 1
 #if (EXTRUDERS > 1) && defined(HEATER_1_MAXTEMP)
@@ -1379,9 +1379,6 @@ void max_temp_error(uint8_t e) {
   }
   #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
   Stop();
-    
-
-    
   #endif
     SET_OUTPUT(EXTRUDER_0_AUTO_FAN_PIN);
     SET_OUTPUT(FAN_PIN);
@@ -1443,7 +1440,7 @@ void bed_min_temp_error(void) {
     }
 #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
     Stop();
-#endif*/
+#endif
 }
 
 #ifdef HEATER_0_USES_MAX6675
@@ -1506,11 +1503,12 @@ int read_max6675()
 
 extern "C" {
 
-void adc_ready(void) //callback from adc when sampling finished
-{
-	current_temperature_raw[0] = adc_values[0];
-	current_temperature_raw_pinda = adc_values[1];
-	current_temperature_bed_raw = adc_values[2];	
+void adc_ready(void) { //callback from adc when sampling finished
+	current_temperature_raw[0] = adc_values[TEMP_0_PIN];
+  current_temperature_raw[1] = adc_values[TEMP_1_PIN];
+	current_temperature_bed_raw = adc_values[TEMP_BED_PIN];	
+ 	current_temperature_raw_pinda = adc_values[TEMP_PINDA_PIN];
+
 #ifdef VOLT_PWR_PIN
 	current_voltage_raw_pwr = adc_values[4];
 #endif
@@ -1883,8 +1881,7 @@ ISR(TIMER0_COMPB_vect)
 	_lock = false;
 }
 
-void check_max_temp()
-{
+void check_max_temp() {
 //heater
 #if HEATER_0_RAW_LO_TEMP > HEATER_0_RAW_HI_TEMP
     if (current_temperature_raw[0] <= maxttemp_raw[0]) {
@@ -1893,6 +1890,13 @@ void check_max_temp()
 #endif
         max_temp_error(0);
     }
+#if HEATER_1_RAW_LO_TEMP > HEATER_1_RAW_HI_TEMP
+  if (current_temperature_raw[1] <= maxttemp_raw[1]) {
+#else
+  if (current_temperature_raw[0] >= maxttemp_raw[1]) {
+#endif
+    max_temp_error(1);
+  }
 //bed
 #if defined(BED_MAXTEMP) && (TEMP_SENSOR_BED != 0)
 #if HEATER_BED_RAW_LO_TEMP > HEATER_BED_RAW_HI_TEMP
@@ -1907,8 +1911,7 @@ void check_max_temp()
 
 }
 
-void check_min_temp_heater0()
-{
+void check_min_temp_heater() {
 //heater
 #if HEATER_0_RAW_LO_TEMP > HEATER_0_RAW_HI_TEMP
 	if (current_temperature_raw[0] >= minttemp_raw[0]) {
@@ -1917,10 +1920,17 @@ void check_min_temp_heater0()
 #endif
 		min_temp_error(0);
 	}
+
+  #if HEATER_1_RAW_LO_TEMP > HEATER_1_RAW_HI_TEMP
+	if (current_temperature_raw[1] >= minttemp_raw[1]) {
+#else
+	if (current_temperature_raw[1] <= minttemp_raw[1]) {
+#endif
+		min_temp_error(1);
+	}
 }
 
-void check_min_temp_bed()
-{
+void check_min_temp_bed() {
 #if HEATER_BED_RAW_LO_TEMP > HEATER_BED_RAW_HI_TEMP
 	if (current_temperature_bed_raw >= bed_minttemp_raw) {
 #else
@@ -1930,8 +1940,7 @@ void check_min_temp_bed()
 	}
 }
 
-void check_min_temp()
-{
+void check_min_temp() {
 #ifdef AMBIENT_THERMISTOR
 	static uint8_t heat_cycles = 0;
 	if (current_temperature_raw_ambient > OVERSAMPLENR*MINTEMP_MINAMBIENT_RAW)
@@ -1941,7 +1950,7 @@ void check_min_temp()
 //			if ((heat_cycles % 10) == 0)
 //				printf_P(PSTR("X%d\n"), heat_cycles);
 			if (heat_cycles > 50) //reaction time 5-10s
-				check_min_temp_heater0();
+				check_min_temp_heater();
 			else
 				heat_cycles++;
 		}
@@ -1950,7 +1959,7 @@ void check_min_temp()
 		return;
 	}
 #endif //AMBIENT_THERMISTOR
-	check_min_temp_heater0();
+	check_min_temp_heater();
 	check_min_temp_bed();
 }
  

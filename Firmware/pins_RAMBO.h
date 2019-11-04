@@ -36,10 +36,10 @@
 //
 #define X_MIN_PIN          12
 #define X_MAX_PIN          24 //Used for Fil Runout on E0
-#define X_MAX_PIN          -1
+// #define X_MAX_PIN          -1
 #define Y_MIN_PIN          11
 #define Y_MAX_PIN          23 //Used for Fil Runout on E1
-#define Y_MAX_PIN          -1
+// #define Y_MAX_PIN          -1
 #define Z_MIN_PIN          10
 #define Z_MAX_PIN          30
 
@@ -103,23 +103,23 @@
 //
 #define TEMP_0_PIN          0   // Analog Input
 #define TEMP_1_PIN          1   // Analog Input
-#define TEMP_2_PIN         -1
-#define TEMP_BED_PIN        7   // Analog Input
-#define TEMP_PINDA_PIN      -1 //A3
+#define TEMP_2_PIN          5
+#define TEMP_BED_PIN        2   // Analog Input
+#define TEMP_PINDA_PIN      7   // Analog Input
 
 //
 // Heaters / Fans
 //
 #define HEATER_0_PIN        9
-#define HEATER_1_PIN        6
-#define HEATER_2_PIN        -1
+#define HEATER_1_PIN        7
+// #define HEATER_2_PIN        6
 #define HEATER_BED_PIN      3
 
 #ifndef FAN_PIN
   #define FAN_PIN           8
 #endif
-#define FAN1_PIN            -1
-//#define FAN2_PIN            2
+#define FAN1_PIN            6
+// #define FAN2_PIN            2
 
 //
 // Misc. Functions
@@ -133,11 +133,11 @@
 //
 // Tachometers
 //
-#define TACH_0             -1 
-#define TACH_1             -1 
+// #define TACH_0             -1 
+// #define TACH_1             -1 
 
 
-#define KILL_PIN           -1
+// #define KILL_PIN           -1
 #define SDSS               53
 
 #define BEEPER 79
@@ -146,7 +146,7 @@
 // LCD / Controller
 //
 #if ENABLED(ULTRA_LCD)
-  #define KILL_PIN         -1
+  // #define KILL_PIN         -1
 
   #if ENABLED(NEWPANEL)
 

@@ -3993,16 +3993,13 @@ void process_commands() {
       break;
 #ifndef _DISABLE_M42_M226
     case 42: //M42 -Change pin status via gcode
-      if (code_seen('S'))
-      {
+      if (code_seen('S')) {
         int pin_status = code_value();
         int pin_number = LED_PIN;
         if (code_seen('P') && pin_status >= 0 && pin_status <= 255)
           pin_number = code_value();
-        for(int8_t i = 0; i < (int8_t)(sizeof(sensitive_pins)/sizeof(int)); i++)
-        {
-          if (sensitive_pins[i] == pin_number)
-          {
+        for(int8_t i = 0; i < (int8_t)(sizeof(sensitive_pins)/sizeof(int)); i++) {
+          if (sensitive_pins[i] == pin_number) {
             pin_number = -1;
             break;
           }
@@ -5044,10 +5041,8 @@ Sigma_Exit:
 
         if(pin_state >= -1 && pin_state <= 1){
 
-          for(int8_t i = 0; i < (int8_t)(sizeof(sensitive_pins)/sizeof(int)); i++)
-          {
-            if (sensitive_pins[i] == pin_number)
-            {
+          for(int8_t i = 0; i < (int8_t)(sizeof(sensitive_pins)/sizeof(int)); i++) {
+            if (sensitive_pins[i] == pin_number) {
               pin_number = -1;
               break;
             }

@@ -224,15 +224,15 @@ extern volatile uint16_t buttons;  //an extended version of the last checked but
 #endif
 
 /* Custom characters defined in the first 8 characters of the LCD */
-#define LCD_STR_BEDTEMP     "\x00"
-#define LCD_STR_DEGREE      "\x01"
-#define LCD_STR_THERMOMETER "\x02"
-#define LCD_STR_UPLEVEL     "\x03"
-#define LCD_STR_REFRESH     "\x04"
-#define LCD_STR_FOLDER      "\x05"
-#define LCD_STR_FEEDRATE    "\x06"
-#define LCD_STR_CLOCK       "\x07"
-#define LCD_STR_ARROW_UP    "\x0B"
+#define LCD_STR_BEDTEMP     "\x00" //Bed Heater icon
+#define LCD_STR_DEGREE      "\x01" //Degree icon
+#define LCD_STR_THERMOMETER "\x02" //Thermometer icon for extruder
+#define LCD_STR_UPLEVEL     "\x03" //RIGHT AND UP ARROW
+#define LCD_STR_REFRESH     "\x04" //little ying yang 
+#define LCD_STR_FOLDER      "\x05" //lil folder guy
+#define LCD_STR_FEEDRATE    "\x06" //Two right arrows
+#define LCD_STR_CLOCK       "\x07" //Lil donut with a line in it
+#define LCD_STR_ARROW_UP    "\x0B" 
 #define LCD_STR_ARROW_DOWN  "\x01"
 #define LCD_STR_ARROW_RIGHT "\x7E"  /* from the default character set */
 
@@ -678,170 +678,160 @@ void lcd_implementation_print_at(uint8_t x, uint8_t y, const char *str)
     lcd.print(str);
 }
 
-/*
 
+
+//HANDLER FOR THE MAIN STATUS SCREEN
+/*
 20x4   |01234567890123456789|
        |T 000/000D  Z000.0  |
-       |B 000/000D  F100%   |
-       |SD100%      T--:--  |
+       |T 000/000D  F100%   |
+       |B 000/000D  T--:--  |
        |Status line.........|
 */
 static void lcd_implementation_status_screen() {
    
-  int tHotend=int(degHotend(0) + 0.5);
+  int tCurrent=int(degHotend(0) + 0.5);
   int tTarget=int(degTargetHotend(0) + 0.5);
 
-  //Print the hotend temperature
+  //Print EXTRUDER 0 temperature
   lcd.setCursor(0, 0);
-  lcd.print(LCD_STR_THERMOMETER[0]);
-  lcd.print(itostr3(tHotend));
+  // lcd.print(LCD_STR_THERMOMETER[0]);
+  lcd_printPGM(PSTR("E1 "));
+  lcd.print(itostr3(tCurrent));
   lcd.print('/');
   lcd.print(itostr3left(tTarget));
   lcd_printPGM(PSTR(LCD_STR_DEGREE " "));
   lcd_printPGM(PSTR("  "));
 
   //Print the Z coordinates
-  lcd.setCursor(LCD_WIDTH - 8-2, 0);
-  // #if 1
-  lcd_printPGM(PSTR("  Z"));
-  if (custom_message_type == 1) {
-      // In a bed calibration mode.
-      lcd_printPGM(PSTR("   --- "));
-  } else {
-      lcd.print(ftostr32sp(current_position[Z_AXIS] + 0.00001));
-      lcd.print(' ');
-  }
-  // #else
-  //   lcd_printPGM(PSTR(" Queue:"));
-  //   lcd.print(int(moves_planned()));
-  //   lcd.print(' ');
-  // #endif
+  // lcd.setCursor(LCD_WIDTH - 8-2, 0);
+  // // #if 1
+  // lcd_printPGM(PSTR("  Z"));
+  // if (custom_message_type == 1) {
+  //     // In a bed calibration mode.
+  //     lcd_printPGM(PSTR("   --- "));
+  // } else {
+  //     lcd.print(ftostr32sp(current_position[Z_AXIS] + 0.00001));
+  //     lcd.print(' ');
+  // }
+    //PRINT FARM NUMBER/ID
+  lcd.setCursor(LCD_WIDTH - 7, 0);
+  lcd_printPGM(PSTR("P#: "));
+  lcd_printPGM(PSTR(PRINTER_NUMBER));
 
-  //Print the Bedtemperature
+
+  //update values 
+  tCurrent=int(degHotend(1) + 0.5);
+  tTarget=int(degTargetHotend(1) + 0.5);
+
+  //Print EXTRUDER 1 temperature
   lcd.setCursor(0, 1);
-  tHotend=int(degBed() + 0.5);
-  tTarget=int(degTargetBed() + 0.5);
-  lcd.print(LCD_STR_BEDTEMP[0]);
-  lcd.print(itostr3(tHotend));
+  // lcd.print(LCD_STR_THERMOMETER[0]);
+  lcd_printPGM(PSTR("E2 "));
+  lcd.print(itostr3(tCurrent));
   lcd.print('/');
   lcd.print(itostr3left(tTarget));
   lcd_printPGM(PSTR(LCD_STR_DEGREE " "));
   lcd_printPGM(PSTR("  "));
 
-  #ifdef PLANNER_DIAGNOSTICS
-    //Print Feedrate
-    lcd.setCursor(LCD_WIDTH - 8-2, 1);
-    lcd.print(LCD_STR_FEEDRATE[0]);
-    lcd.print(itostr3(feedmultiply));
-    lcd_printPGM(PSTR("%  Q"));
-    {
-      uint8_t queue = planner_queue_min();
-      if (queue < (BLOCK_BUFFER_SIZE >> 1)) {
-        lcd.write('!');
-      } else {
-        lcd.write((char)(queue / 10) + '0');
-        queue %= 10;
-      }
-      lcd.write((char)queue + '0');
-      planner_queue_min_reset();
-    }
-  #else /* PLANNER_DIAGNOSTICS */
-    //Print Feedrate
-    lcd.setCursor(LCD_WIDTH - 8-2, 1);
-    lcd_printPGM(PSTR("  "));
-    lcd.print(LCD_STR_FEEDRATE[0]);
-    lcd.print(itostr3(feedmultiply));
-    lcd_printPGM(PSTR("%     "));
-  #endif /* PLANNER_DIAGNOSTICS */
-
-
-  #ifdef SDSUPPORT
-	  bool print_sd_status = true;
-	#endif
-
-  // #ifdef PINDA_THERMISTOR
-  //   //	if (farm_mode && (custom_message_type == 4))
-  //   if(false) {
-  //     lcd.setCursor(0, 2);
-  //     lcd_printPGM(PSTR("P"));
-  //     lcd.print(ftostr3(current_temperature_pinda));
-  //     lcd_printPGM(PSTR(LCD_STR_DEGREE " "));
-  //     print_sd_status = false;
+  // #ifdef PLANNER_DIAGNOSTICS
+  //   //Print Feedrate
+  //   lcd.setCursor(LCD_WIDTH - 8-2, 1);
+  //   lcd.print(LCD_STR_FEEDRATE[0]);
+  //   lcd.print(itostr3(feedmultiply));
+  //   lcd_printPGM(PSTR("%  Q"));
+  //   {
+  //     uint8_t queue = planner_queue_min();
+  //     if (queue < (BLOCK_BUFFER_SIZE >> 1)) {
+  //       lcd.write('!');
+  //     } else {
+  //       lcd.write((char)(queue / 10) + '0');
+  //       queue %= 10;
+  //     }
+  //     lcd.write((char)queue + '0');
+  //     planner_queue_min_reset();
   //   }
-  // #endif //PINDA_THERMISTOR
+  // #else /* PLANNER_DIAGNOSTICS */
+  //   //Print Feedrate
+    // lcd.setCursor(LCD_WIDTH - 8-2, 1);
+    // lcd_printPGM(PSTR("  "));
+    // lcd.print(LCD_STR_FEEDRATE[0]);
+    // lcd.print(itostr3(feedmultiply));
+    // lcd_printPGM(PSTR("%     "));
+  // #endif /* PLANNER_DIAGNOSTICS */
 
-  #ifdef SDSUPPORT
-    if (print_sd_status) {
-        //Print SD status
-        lcd.setCursor(0, 2);
-      if (is_usb_printing) {
-        lcd_printPGM(PSTR("--"));
-      } else {
-        lcd_printPGM(PSTR("SD"));
-      }
-      if (IS_SD_PRINTING) {
-        lcd.print(itostr3(card.percentDone()));
-        lcd.print('%');
-      } else {
-        if (is_usb_printing) {
-          lcd_printPGM(PSTR(">USB"));
-        } else {
-          lcd_printPGM(PSTR("---"));
-          lcd.print('%');
-        }
-      }
-    }
-  #endif
+  //HEATED BED TEMP DISPLAY
+   lcd.setCursor(0, 2);
+   tCurrent=int(degBed() + 0.5);
+   tTarget=int(degTargetBed() + 0.5);
+   lcd.print(LCD_STR_BEDTEMP[0]);
+   lcd_printPGM(PSTR("B  "));
+   lcd.print(itostr3(tCurrent));
+   lcd.print('/');
+   lcd.print(itostr3left(tTarget));
+   lcd_printPGM(PSTR(LCD_STR_DEGREE " "));
+   lcd_printPGM(PSTR("  "));
+
+
 
 	// Farm number display
-	if (farm_mode) {
-		lcd_printPGM(PSTR(" F"));
-		lcd.print(farm_no);
-		lcd_printPGM(PSTR("  "));
+	// if (farm_mode) {
+	// 	lcd_printPGM(PSTR(" F"));
+	// 	lcd.print(farm_no);
+	// 	lcd_printPGM(PSTR("  "));
         
-    // Beat display
-    lcd.setCursor(LCD_WIDTH - 1, 0);
-    if ( (millis() - kicktime) < 60000 ) {
-        lcd_printPGM(PSTR("L"));
-    } else {
-        lcd_printPGM(PSTR(" "));
-    }
-	} else {
-  #ifdef SNMM
-      lcd_printPGM(PSTR(" E"));
-      lcd.print(get_ext_nr() + 1);
+  //   // Beat display
+  //   lcd.setCursor(LCD_WIDTH - 1, 0);
+  //   if ( (millis() - kicktime) < 60000 ) {
+  //       lcd_printPGM(PSTR("L"));
+  //   } else {
+  //       lcd_printPGM(PSTR(" "));
+  //   }
+	// } else {
+  // #ifdef SNMM
+  //     lcd_printPGM(PSTR(" E"));
+  //     lcd.print(get_ext_nr() + 1);
 
-  #else
-		lcd.setCursor(LCD_WIDTH - 8 - 2, 2);
-		lcd_printPGM(PSTR(" "));
-  #endif
-	}
+  // #else
+	// 	lcd.setCursor(LCD_WIDTH - 8 - 2, 2);
+	// 	lcd_printPGM(PSTR(" "));
+  // #endif
+	// }
 
     //Print time elapsed
-    lcd.setCursor(LCD_WIDTH - 8 -1, 2);
-    lcd_printPGM(PSTR(" "));
-    lcd.print(LCD_STR_CLOCK[0]);
-    if(starttime != 0) {
-		uint16_t time = millis() / 60000 - starttime / 60000;
-        lcd.print(itostr2(time/60));
-        lcd.print(':');
-        lcd.print(itostr2(time%60));
-    } else {
-        lcd_printPGM(PSTR("--:--"));
-    }
-    lcd_printPGM(PSTR("  "));
+    // lcd.setCursor(LCD_WIDTH - 8 -1, 2);
+    // lcd_printPGM(PSTR(" "));
+    // lcd.print(LCD_STR_CLOCK[0]);
+    // if(starttime != 0) {
+		// uint16_t time = millis() / 60000 - starttime / 60000;
+    //     lcd.print(itostr2(time/60));
+    //     lcd.print(':');
+    //     lcd.print(itostr2(time%60));
+    // } else {
+    //     lcd_printPGM(PSTR("--:--"));
+    // }
+    // lcd_printPGM(PSTR("  "));
+
+    #ifdef PINDA_THERMISTOR
+      lcd.setCursor(LCD_WIDTH - 7, 2);
+      lcd_printPGM(PSTR("P "));
+      lcd.print(ftostr3(current_temperature_pinda));
+      lcd_printPGM(PSTR(LCD_STR_DEGREE " "));
+    #endif
+
+    
 
   #ifdef DEBUG_DISABLE_LCD_STATUS_LINE
     return;
   #endif //DEBUG_DISABLE_LCD_STATUS_LINE
 
   //Print status line
-  lcd.setCursor(0, 3);
+  // lcd.setCursor(0, 3);
 
-    // If heating in progress, set flag
-	if (heating_status != 0) {
-    custom_message = true;
-  }
+  //   // If heating in progress, set flag
+	// if (heating_status != 0) {
+  //   custom_message = true;
+  // }
 
 
   #ifdef SDSUPPORT
@@ -990,23 +980,21 @@ static void lcd_implementation_status_screen() {
     }
   } else {
     // Nothing special, print status message normally
+    lcd.setCursor(0,3);
     lcd.print(lcd_status_message);
   }
   #endif
 
   // Fill the rest of line to have nice and clean output
   for(int fillspace = 0; fillspace<20;fillspace++) {
-    if((lcd_status_message[fillspace] > 31 )) {
-    
-    } else {
+    if(!(lcd_status_message[fillspace] > 31 )) {
       lcd.print(' ');
     }
   }
 }
 
 
-static void lcd_implementation_drawmenu_generic(uint8_t row, const char* pstr, char pre_char, char post_char)
-{
+static void lcd_implementation_drawmenu_generic(uint8_t row, const char* pstr, char pre_char, char post_char) {
     char c;
     //Use all characters in narrow LCDs
   #if LCD_WIDTH < 20

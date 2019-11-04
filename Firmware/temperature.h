@@ -46,8 +46,8 @@ extern int target_temperature_bed;
 extern float current_temperature_bed;
 
 #ifdef PINDA_THERMISTOR
-//extern int current_temperature_raw_pinda;
-extern float current_temperature_pinda;
+  //extern int current_temperature_raw_pinda;
+  extern float current_temperature_pinda;
 #endif
 
 #ifdef AMBIENT_THERMISTOR

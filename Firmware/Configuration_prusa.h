@@ -15,6 +15,7 @@
 
 // Printer name
 #define CUSTOM_MENDEL_NAME "PEPCORP MK1"
+#define PRINTER_NUMBER "008"
 
 // Electronics
 #define MOTHERBOARD BOARD_RAMBO
@@ -401,12 +402,12 @@ const bool Z_MIN_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 // 110 is Pt100 with 1k pullup (non standard)
 
 
-#define TEMP_SENSOR_0 998
+#define TEMP_SENSOR_0 5
 
-#define TEMP_SENSOR_1 998
-#define TEMP_SENSOR_2 998
-#define TEMP_SENSOR_BED 998
-#define TEMP_SENSOR_PINDA 998
+#define TEMP_SENSOR_1 5
+#define TEMP_SENSOR_2 0
+#define TEMP_SENSOR_BED 1
+#define TEMP_SENSOR_PINDA 0
 
 #define STACK_GUARD_TEST_VALUE 0xA2A2
 
