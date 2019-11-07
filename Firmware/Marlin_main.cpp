@@ -901,7 +901,9 @@ uint8_t check_printer_version() {
 } //check_printer_version
 
 void erase_eeprom_section(uint16_t offset, uint16_t bytes) {
-	for (int i = offset; i < (offset+bytes); i++) eeprom_write_byte((uint8_t*)i, 0xFF);
+	for (int i = offset; i < (offset+bytes); i++){
+    eeprom_write_byte((uint8_t*)i, 0xFF);
+  }
 } //erase_eeprom_section
 
 // "Setup" function is called by the Arduino framework on startup.
@@ -1388,6 +1390,7 @@ int serial_read_stream() {
 void loop() {
 	KEEPALIVE_STATE(NOT_BUSY);
 	bool stack_integrity = true;
+  lcd_wait_for_cool_down();
 
 	if ((usb_printing_counter > 0) && ((millis()-_usb_timer) > 1000))	{
 		is_usb_printing = true;

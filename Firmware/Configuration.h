@@ -620,7 +620,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = true; // set to true to invert the logic of
 //automatic expansion
 #if defined (MAKRPANEL)
  #define DOGLCD
- #define SDSUPPORT
+ //#define SDSUPPORT
  #define ULTIPANEL
  #define NEWPANEL
  #define DEFAULT_LCD_CONTRAST 17

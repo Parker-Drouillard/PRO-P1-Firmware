@@ -462,8 +462,7 @@ void lcd_set_custom_characters_arrows()
     lcd.createChar(1, arrdown);
 }
 
-void lcd_set_custom_characters_progress()
- {
+void lcd_set_custom_characters_progress() {
   byte progress[8] = {
 	B11111,
 	B11111,
@@ -477,8 +476,7 @@ void lcd_set_custom_characters_progress()
   lcd.createChar(1, progress);
  }
 
-void lcd_set_custom_characters_nextpage()
- {
+void lcd_set_custom_characters_nextpage() {
 
   byte arrdown[8] = {
     B00000,
@@ -505,8 +503,7 @@ void lcd_set_custom_characters_nextpage()
 	lcd.createChar(2, confirm);
 }
 
-void lcd_set_custom_characters_degree()
- {
+void lcd_set_custom_characters_degree() {
   byte degree[8] = {
     B01100,
     B10010,
@@ -528,37 +525,36 @@ static void lcd_implementation_init(
   #endif
 ) {
 
-#if defined(LCD_I2C_TYPE_PCF8575)
+  #if defined(LCD_I2C_TYPE_PCF8575)
     lcd.begin(LCD_WIDTH, LCD_HEIGHT);
   #ifdef LCD_I2C_PIN_BL
     lcd.setBacklightPin(LCD_I2C_PIN_BL,POSITIVE);
     lcd.setBacklight(HIGH);
   #endif
   
-#elif defined(LCD_I2C_TYPE_MCP23017)
+  #elif defined(LCD_I2C_TYPE_MCP23017)
     lcd.setMCPType(LTI_TYPE_MCP23017);
     lcd.begin(LCD_WIDTH, LCD_HEIGHT);
     lcd.setBacklight(0); //set all the LEDs off to begin with
     
-#elif defined(LCD_I2C_TYPE_MCP23008)
+  #elif defined(LCD_I2C_TYPE_MCP23008)
     lcd.setMCPType(LTI_TYPE_MCP23008);
     lcd.begin(LCD_WIDTH, LCD_HEIGHT);
 
-#elif defined(LCD_I2C_TYPE_PCA8574)
-      lcd.init();
-      lcd.backlight();
-    
-#else
+  #elif defined(LCD_I2C_TYPE_PCA8574)
+    lcd.init();
+    lcd.backlight();  
+  #else
     lcd.begin(LCD_WIDTH, LCD_HEIGHT);
-#endif
+  #endif
 
-    lcd_set_custom_characters(
-        #if defined(LCD_PROGRESS_BAR) && defined(SDSUPPORT)
-            progress_bar_set
-        #endif
-    );
+  lcd_set_custom_characters(
+    #if defined(LCD_PROGRESS_BAR) && defined(SDSUPPORT)
+      progress_bar_set
+    #endif
+   );
 
-    lcd.clear();
+  lcd.clear();
 }
 
 
@@ -566,116 +562,101 @@ static void lcd_implementation_init_noclear(
   #if defined(LCD_PROGRESS_BAR) && defined(SDSUPPORT)
     bool progress_bar_set=true
   #endif
-) {
+  ) {
 
-#if defined(LCD_I2C_TYPE_PCF8575)
+  #if defined(LCD_I2C_TYPE_PCF8575)
     lcd.begin_noclear(LCD_WIDTH, LCD_HEIGHT);
-  #ifdef LCD_I2C_PIN_BL
-    lcd.setBacklightPin(LCD_I2C_PIN_BL,POSITIVE);
-    lcd.setBacklight(HIGH);
-  #endif
+    #ifdef LCD_I2C_PIN_BL
+      lcd.setBacklightPin(LCD_I2C_PIN_BL,POSITIVE);
+      lcd.setBacklight(HIGH);
+    #endif
   
-#elif defined(LCD_I2C_TYPE_MCP23017)
+  #elif defined(LCD_I2C_TYPE_MCP23017)
     lcd.setMCPType(LTI_TYPE_MCP23017);
     lcd.begin_noclear(LCD_WIDTH, LCD_HEIGHT);
     lcd.setBacklight(0); //set all the LEDs off to begin with
     
-#elif defined(LCD_I2C_TYPE_MCP23008)
+  #elif defined(LCD_I2C_TYPE_MCP23008)
     lcd.setMCPType(LTI_TYPE_MCP23008);
     lcd.begin_noclear(LCD_WIDTH, LCD_HEIGHT);
 
-#elif defined(LCD_I2C_TYPE_PCA8574)
-      lcd.init();
-      lcd.backlight();
+  #elif defined(LCD_I2C_TYPE_PCA8574)
+    lcd.init();
+    lcd.backlight();
     
-#else
+  #else
     lcd.begin_noclear(LCD_WIDTH, LCD_HEIGHT);
-#endif
+  #endif
 
-    lcd_set_custom_characters(
-        #if defined(LCD_PROGRESS_BAR) && defined(SDSUPPORT)
-            progress_bar_set
-        #endif
-    );
-
-
+  lcd_set_custom_characters(
+      #if defined(LCD_PROGRESS_BAR) && defined(SDSUPPORT)
+          progress_bar_set
+      #endif
+  );
 }
 
 
-static void lcd_implementation_nodisplay()
-{
-    lcd.noDisplay();
-}
-static void lcd_implementation_display()
-{
-    lcd.display();
+static void lcd_implementation_nodisplay() {
+  lcd.noDisplay();
 }
 
-void lcd_implementation_clear()
-{
-    lcd.clear();
+static void lcd_implementation_display() {
+  lcd.display();
 }
+
+void lcd_implementation_clear() {
+  lcd.clear();
+}
+
 /* Arduino < 1.0.0 is missing a function to print PROGMEM strings, so we need to implement our own */
-void lcd_printPGM(const char* str)
-{
-    char c;
-    while((c = pgm_read_byte(str++)) != '\0')
-    {
-        lcd.write(c);
-    }
-}
-
-void lcd_print_at_PGM(uint8_t x, uint8_t y, const char* str)
-{
-    lcd.setCursor(x, y);
-    char c;
-    while((c = pgm_read_byte(str++)) != '\0')
-    {
-        lcd.write(c);
-    }
-}
-
-void lcd_implementation_write(char c)
-{
+void lcd_printPGM(const char* str) {
+  char c;
+  while((c = pgm_read_byte(str++)) != '\0') {
     lcd.write(c);
+  }
 }
 
-void lcd_implementation_print(int8_t i)
-{
-    lcd.print(i);
+void lcd_print_at_PGM(uint8_t x, uint8_t y, const char* str) {
+  lcd.setCursor(x, y);
+  char c;
+  while((c = pgm_read_byte(str++)) != '\0') {
+    lcd.write(c);
+  }
 }
 
-void lcd_implementation_print_at(uint8_t x, uint8_t y, int8_t i)
-{
-    lcd.setCursor(x, y);
-    lcd.print(i);
+void lcd_implementation_write(char c) {
+  lcd.write(c);
 }
 
-void lcd_implementation_print(int i)
-{
-    lcd.print(i);
+void lcd_implementation_print(int8_t i) {
+  lcd.print(i);
 }
 
-void lcd_implementation_print_at(uint8_t x, uint8_t y, int i)
-{
-    lcd.setCursor(x, y);
-    lcd.print(i);
+void lcd_implementation_print_at(uint8_t x, uint8_t y, int8_t i) {
+  lcd.setCursor(x, y);
+  lcd.print(i);
 }
 
-void lcd_implementation_print(float f)
-{
-    lcd.print(f);
+void lcd_implementation_print(int i) {
+  lcd.print(i);
 }
 
-void lcd_implementation_print(const char *str)
-{
-    lcd.print(str);
+void lcd_implementation_print_at(uint8_t x, uint8_t y, int i) {
+  lcd.setCursor(x, y);
+  lcd.print(i);
 }
 
-void lcd_implementation_print_at(uint8_t x, uint8_t y, const char *str)
-{
-    lcd.setCursor(x, y);
-    lcd.print(str);
+void lcd_implementation_print(float f) {
+  lcd.print(f);
+}
+
+void lcd_implementation_print(const char *str) {
+  lcd.print(str);
+}
+
+void lcd_implementation_print_at(uint8_t x, uint8_t y, const char *str) {
+  lcd.setCursor(x, y);
+  lcd.print(str);
 }
 
 
@@ -765,7 +746,7 @@ static void lcd_implementation_status_screen() {
    tCurrent=int(degBed() + 0.5);
    tTarget=int(degTargetBed() + 0.5);
    lcd.print(LCD_STR_BEDTEMP[0]);
-   lcd_printPGM(PSTR("B  "));
+   lcd_printPGM(PSTR("B "));
    lcd.print(itostr3(tCurrent));
    lcd.print('/');
    lcd.print(itostr3left(tTarget));
@@ -774,29 +755,29 @@ static void lcd_implementation_status_screen() {
 
 
 
-	// Farm number display
-	// if (farm_mode) {
-	// 	lcd_printPGM(PSTR(" F"));
-	// 	lcd.print(farm_no);
-	// 	lcd_printPGM(PSTR("  "));
-        
-  //   // Beat display
-  //   lcd.setCursor(LCD_WIDTH - 1, 0);
-  //   if ( (millis() - kicktime) < 60000 ) {
-  //       lcd_printPGM(PSTR("L"));
-  //   } else {
-  //       lcd_printPGM(PSTR(" "));
-  //   }
-	// } else {
-  // #ifdef SNMM
-  //     lcd_printPGM(PSTR(" E"));
-  //     lcd.print(get_ext_nr() + 1);
+    // Farm number display
+    // if (farm_mode) {
+    // 	lcd_printPGM(PSTR(" F"));
+    // 	lcd.print(farm_no);
+    // 	lcd_printPGM(PSTR("  "));
+          
+    //   // Beat display
+    //   lcd.setCursor(LCD_WIDTH - 1, 0);
+    //   if ( (millis() - kicktime) < 60000 ) {
+    //       lcd_printPGM(PSTR("L"));
+    //   } else {
+    //       lcd_printPGM(PSTR(" "));
+    //   }
+    // } else {
+    // #ifdef SNMM
+    //     lcd_printPGM(PSTR(" E"));
+    //     lcd.print(get_ext_nr() + 1);
 
-  // #else
-	// 	lcd.setCursor(LCD_WIDTH - 8 - 2, 2);
-	// 	lcd_printPGM(PSTR(" "));
-  // #endif
-	// }
+    // #else
+    // 	lcd.setCursor(LCD_WIDTH - 8 - 2, 2);
+    // 	lcd_printPGM(PSTR(" "));
+    // #endif
+    // }
 
     //Print time elapsed
     // lcd.setCursor(LCD_WIDTH - 8 -1, 2);
@@ -821,9 +802,9 @@ static void lcd_implementation_status_screen() {
 
     
 
-  #ifdef DEBUG_DISABLE_LCD_STATUS_LINE
-    return;
-  #endif //DEBUG_DISABLE_LCD_STATUS_LINE
+    #ifdef DEBUG_DISABLE_LCD_STATUS_LINE
+      return;
+    #endif //DEBUG_DISABLE_LCD_STATUS_LINE
 
   //Print status line
   // lcd.setCursor(0, 3);
@@ -834,21 +815,21 @@ static void lcd_implementation_status_screen() {
   // }
 
 
-  #ifdef SDSUPPORT
-    if (IS_SD_PRINTING) {
-      if (strcmp(longFilenameOLD, card.longFilename) != 0)
-      {
-        memset(longFilenameOLD, '\0', strlen(longFilenameOLD));
-        sprintf_P(longFilenameOLD, PSTR("%s"), card.longFilename);
-        scrollstuff = 0;
-      }
-    }
-  #endif
+  // #ifdef SDSUPPORT
+  //   if (IS_SD_PRINTING) {
+  //     if (strcmp(longFilenameOLD, card.longFilename) != 0)
+  //     {
+  //       memset(longFilenameOLD, '\0', strlen(longFilenameOLD));
+  //       sprintf_P(longFilenameOLD, PSTR("%s"), card.longFilename);
+  //       scrollstuff = 0;
+  //     }
+  //   }
+  // #endif
 
 
   // If printing from SD, show what we are printing
   #ifdef SDSUPPORT
-    	if ((IS_SD_PRINTING) && !custom_message
+    	// if ((IS_SD_PRINTING) && !custom_message
   #ifdef DEBUG_BUILD
     && lcd_status_message[0] == 0
   #endif /* DEBUG_BUILD */
@@ -993,7 +974,6 @@ static void lcd_implementation_status_screen() {
   }
 }
 
-
 static void lcd_implementation_drawmenu_generic(uint8_t row, const char* pstr, char pre_char, char post_char) {
     char c;
     //Use all characters in narrow LCDs
@@ -1002,87 +982,87 @@ static void lcd_implementation_drawmenu_generic(uint8_t row, const char* pstr, c
     #else
       uint8_t n = LCD_WIDTH - 1 - 2;
   #endif
+  lcd.setCursor(0, row);
+  lcd.print(pre_char);
+  while( ((c = pgm_read_byte(pstr)) != '\0') && (n>0)) {
+      lcd.print(c);
+      pstr++;
+      n--;
+  }
+  while(n--){
+    lcd.print(' ');
+  }  
+  lcd.print(post_char);
+  lcd.print(' ');
+}
+
+static void lcd_implementation_drawmenu_generic_RAM(uint8_t row, const char* str, char pre_char, char post_char) {
+  char c;
+  //Use all characters in narrow LCDs
+  #if LCD_WIDTH < 20
+    uint8_t n = LCD_WIDTH - 1 - 1;
+  #else
+    uint8_t n = LCD_WIDTH - 1 - 2;
+  #endif
     lcd.setCursor(0, row);
     lcd.print(pre_char);
-    while( ((c = pgm_read_byte(pstr)) != '\0') && (n>0) )
-    {
-        lcd.print(c);
-        pstr++;
-        n--;
+    while( ((c = *str) != '\0') && (n>0) ) {
+      lcd.print(c);
+      str++;
+      n--;
     }
-    while(n--)
-        lcd.print(' ');
+    while(n--){
+      lcd.print(' ');
+    }
+
     lcd.print(post_char);
     lcd.print(' ');
 }
 
-static void lcd_implementation_drawmenu_generic_RAM(uint8_t row, const char* str, char pre_char, char post_char)
-{
-    char c;
-    //Use all characters in narrow LCDs
+static void lcd_implementation_drawmenu_setting_edit_generic(uint8_t row, const char* pstr, char pre_char, char* data) {
+  char c;
+  //Use all characters in narrow LCDs
   #if LCD_WIDTH < 20
-      uint8_t n = LCD_WIDTH - 1 - 1;
-    #else
-      uint8_t n = LCD_WIDTH - 1 - 2;
+    uint8_t n = LCD_WIDTH - 1 - 1 - strlen(data);
+  #else
+    uint8_t n = LCD_WIDTH - 1 - 2 - strlen(data);
   #endif
-    lcd.setCursor(0, row);
-    lcd.print(pre_char);
-    while( ((c = *str) != '\0') && (n>0) )
-    {
-        lcd.print(c);
-        str++;
-        n--;
-    }
-    while(n--)
-        lcd.print(' ');
-    lcd.print(post_char);
+  lcd.setCursor(0, row);
+  lcd.print(pre_char);
+  while( ((c = pgm_read_byte(pstr)) != '\0') && (n>0) ) {
+    lcd.print(c);
+    pstr++;
+    n--;
+  }
+  lcd.print(':');
+  while(n--){
     lcd.print(' ');
+  }
+  lcd.print(data);
 }
 
-static void lcd_implementation_drawmenu_setting_edit_generic(uint8_t row, const char* pstr, char pre_char, char* data)
-{
-    char c;
-    //Use all characters in narrow LCDs
+static void lcd_implementation_drawmenu_setting_edit_generic_P(uint8_t row, const char* pstr, char pre_char, const char* data) {
+  char c;
+  //Use all characters in narrow LCDs
   #if LCD_WIDTH < 20
-      uint8_t n = LCD_WIDTH - 1 - 1 - strlen(data);
-    #else
-      uint8_t n = LCD_WIDTH - 1 - 2 - strlen(data);
+    uint8_t n = LCD_WIDTH - 1 - 1 - strlen_P(data);
+  #else
+    uint8_t n = LCD_WIDTH - 1 - 2 - strlen_P(data);
   #endif
     lcd.setCursor(0, row);
     lcd.print(pre_char);
-    while( ((c = pgm_read_byte(pstr)) != '\0') && (n>0) )
-    {
-        lcd.print(c);
-        pstr++;
-        n--;
-    }
-    lcd.print(':');
-    while(n--)
-        lcd.print(' ');
-    lcd.print(data);
+  while( ((c = pgm_read_byte(pstr)) != '\0') && (n>0) ) {
+    lcd.print(c);
+    pstr++;
+    n--;
+  }
+  lcd.print(':');
+  while(n--){
+    lcd.print(' ');
+  }
+  lcd_printPGM(data);
 }
-static void lcd_implementation_drawmenu_setting_edit_generic_P(uint8_t row, const char* pstr, char pre_char, const char* data)
-{
-    char c;
-    //Use all characters in narrow LCDs
-  #if LCD_WIDTH < 20
-      uint8_t n = LCD_WIDTH - 1 - 1 - strlen_P(data);
-    #else
-      uint8_t n = LCD_WIDTH - 1 - 2 - strlen_P(data);
-  #endif
-    lcd.setCursor(0, row);
-    lcd.print(pre_char);
-    while( ((c = pgm_read_byte(pstr)) != '\0') && (n>0) )
-    {
-        lcd.print(c);
-        pstr++;
-        n--;
-    }
-    lcd.print(':');
-    while(n--)
-        lcd.print(' ');
-    lcd_printPGM(data);
-}
+
 #define lcd_implementation_drawmenu_setting_edit_int3_selected(row, pstr, pstr2, data, minValue, maxValue) lcd_implementation_drawmenu_setting_edit_generic(row, pstr, '>', itostr3(*(data)))
 #define lcd_implementation_drawmenu_setting_edit_int3(row, pstr, pstr2, data, minValue, maxValue) lcd_implementation_drawmenu_setting_edit_generic(row, pstr, ' ', itostr3(*(data)))
 #define lcd_implementation_drawmenu_setting_edit_float3_selected(row, pstr, pstr2, data, minValue, maxValue) lcd_implementation_drawmenu_setting_edit_generic(row, pstr, '>', ftostr3(*(data)))
@@ -1123,145 +1103,141 @@ static void lcd_implementation_drawmenu_setting_edit_generic_P(uint8_t row, cons
 #define lcd_implementation_drawmenu_setting_edit_callback_bool(row, pstr, pstr2, data, callback) lcd_implementation_drawmenu_setting_edit_generic_P(row, pstr, ' ', (*(data))?PSTR(MSG_ON):PSTR(MSG_OFF))
 
 
-void lcd_implementation_drawedit(const char* pstr, char* value)
-{
-    lcd.setCursor(1, 1);
-    lcd_printPGM(pstr);
-    lcd.print(':');
-   #if LCD_WIDTH < 20
-      lcd.setCursor(LCD_WIDTH - strlen(value), 1);
-    #else
-      lcd.setCursor(LCD_WIDTH -1 - strlen(value), 1);
-   #endif
+void lcd_implementation_drawedit(const char* pstr, char* value) {
+  lcd.setCursor(1, 1);
+  lcd_printPGM(pstr);
+  lcd.print(':');
+  #if LCD_WIDTH < 20
+    lcd.setCursor(LCD_WIDTH - strlen(value), 1);
+  #else
+    lcd.setCursor(LCD_WIDTH -1 - strlen(value), 1);
+  #endif
     lcd.print(value);
 }
 
-void lcd_implementation_drawedit_2(const char* pstr, char* value)
-{
-    lcd.setCursor(0, 1);
-    lcd_printPGM(pstr);
-    lcd.print(':');
+void lcd_implementation_drawedit_2(const char* pstr, char* value) {
+  lcd.setCursor(0, 1);
+  lcd_printPGM(pstr);
+  lcd.print(':');
 
-    lcd.setCursor((LCD_WIDTH - strlen(value))/2, 3);
+  lcd.setCursor((LCD_WIDTH - strlen(value))/2, 3);
 
-    lcd.print(value);
-    lcd.print(" mm");
+  lcd.print(value);
+  lcd.print(" mm");
 }
 
-static void lcd_implementation_drawmenu_sdfile_selected(uint8_t row, const char* pstr, const char* filename, char* longFilename)
-{
-    char c;
-    int enc_dif = encoderDiff;
-    uint8_t n = LCD_WIDTH - 1;
-    for(int g = 0; g<4;g++){
-      lcd.setCursor(0, g);
+static void lcd_implementation_drawmenu_sdfile_selected(uint8_t row, const char* pstr, const char* filename, char* longFilename) {
+  char c;
+  int enc_dif = encoderDiff;
+  uint8_t n = LCD_WIDTH - 1;
+  for(int g = 0; g<4;g++){
+    lcd.setCursor(0, g);
     lcd.print(' ');
-    }
+  }
 
-    lcd.setCursor(0, row);
-    lcd.print('>');
-    int i = 1;
-    int j = 0;
-    char* longFilenameTMP = longFilename;
+  lcd.setCursor(0, row);
+  lcd.print('>');
+  int i = 1;
+  int j = 0;
+  char* longFilenameTMP = longFilename;
 
-    while((c = *longFilenameTMP) != '\0')
-    {
-        lcd.setCursor(i, row);
-        lcd.print(c);
-        i++;
-        longFilenameTMP++;
-        if(i==LCD_WIDTH){
-          i=1;
-          j++;
-          longFilenameTMP = longFilename + j;          
-          n = LCD_WIDTH - 1;
-          for(int g = 0; g<300 ;g++){
+  while((c = *longFilenameTMP) != '\0') {
+    lcd.setCursor(i, row);
+    lcd.print(c);
+    i++;
+    longFilenameTMP++;
+    if(i==LCD_WIDTH){
+      i=1;
+      j++;
+      longFilenameTMP = longFilename + j;          
+      n = LCD_WIDTH - 1;
+      for(int g = 0; g<300 ;g++){
 			  manage_heater();
-            if(LCD_CLICKED || ( enc_dif != encoderDiff )){
-				longFilenameTMP = longFilename;
-				*(longFilenameTMP + LCD_WIDTH - 2) = '\0';
-				i = 1;
-				j = 0;
-				break;
-            }else{
-				if (j == 1) delay(3);	//wait around 1.2 s to start scrolling text
+        if(LCD_CLICKED || ( enc_dif != encoderDiff )){
+  				longFilenameTMP = longFilename;
+	  			*(longFilenameTMP + LCD_WIDTH - 2) = '\0';
+		  		i = 1;
+			  	j = 0;
+				  break;
+        } else {
+				  if (j == 1){
+            delay(3);	//wait around 1.2 s to start scrolling text
+          } 
 				delay(1);				//then scroll with redrawing every 300 ms 
-            }
-
-          }
         }
+      }
     }
-    if(c!='\0'){
-      lcd.setCursor(i, row);
-        lcd.print(c);
-        i++;
-    }
-    n=n-i+1;
-    while(n--)
-        lcd.print(' ');
-}
-static void lcd_implementation_drawmenu_sdfile(uint8_t row, const char* pstr, const char* filename, char* longFilename)
-{
-    char c;
-    uint8_t n = LCD_WIDTH - 1;
-    lcd.setCursor(0, row);
+  }
+  if(c!='\0') {
+    lcd.setCursor(i, row);
+    lcd.print(c);
+    i++;
+  }
+  n=n-i+1;
+  while(n--){
     lcd.print(' ');
-    if (longFilename[0] != '\0')
-    {
-        filename = longFilename;
-        longFilename[LCD_WIDTH-1] = '\0';
-    }
-    while( ((c = *filename) != '\0') && (n>0) )
-    {
-        lcd.print(c);
-        filename++;
-        n--;
-    }
-    while(n--)
-        lcd.print(' ');
+  }
 }
-static void lcd_implementation_drawmenu_sddirectory_selected(uint8_t row, const char* pstr, const char* filename, char* longFilename)
-{
-    char c;
-    uint8_t n = LCD_WIDTH - 2;
-    lcd.setCursor(0, row);
-    lcd.print('>');
-    lcd.print(LCD_STR_FOLDER[0]);
-    if (longFilename[0] != '\0')
-    {
-        filename = longFilename;
-        longFilename[LCD_WIDTH-2] = '\0';
-    }
-    while( ((c = *filename) != '\0') && (n>0) )
-    {
-        lcd.print(c);
-        filename++;
-        n--;
-    }
-    while(n--)
-        lcd.print(' ');
-}
-static void lcd_implementation_drawmenu_sddirectory(uint8_t row, const char* pstr, const char* filename, char* longFilename)
-{
-    char c;
-    uint8_t n = LCD_WIDTH - 2;
-    lcd.setCursor(0, row);
+
+static void lcd_implementation_drawmenu_sdfile(uint8_t row, const char* pstr, const char* filename, char* longFilename) {
+  char c;
+  uint8_t n = LCD_WIDTH - 1;
+  lcd.setCursor(0, row);
+  lcd.print(' ');
+  if (longFilename[0] != '\0') {
+    filename = longFilename;
+    longFilename[LCD_WIDTH-1] = '\0';
+  }
+  while( ((c = *filename) != '\0') && (n>0) ) {
+    lcd.print(c);
+    filename++;
+    n--;
+  }
+  while(n--){
     lcd.print(' ');
-    lcd.print(LCD_STR_FOLDER[0]);
-    if (longFilename[0] != '\0')
-    {
-        filename = longFilename;
-        longFilename[LCD_WIDTH-2] = '\0';
-    }
-    while( ((c = *filename) != '\0') && (n>0) )
-    {
-        lcd.print(c);
-        filename++;
-        n--;
-    }
-    while(n--)
-        lcd.print(' ');
+  }
 }
+
+static void lcd_implementation_drawmenu_sddirectory_selected(uint8_t row, const char* pstr, const char* filename, char* longFilename) {
+  char c;
+  uint8_t n = LCD_WIDTH - 2;
+  lcd.setCursor(0, row);
+  lcd.print('>');
+  lcd.print(LCD_STR_FOLDER[0]);
+  if (longFilename[0] != '\0') {
+    filename = longFilename;
+    longFilename[LCD_WIDTH-2] = '\0';
+  }
+  while( ((c = *filename) != '\0') && (n>0) ) {
+    lcd.print(c);
+    filename++;
+    n--;
+  }
+  while(n--){
+    lcd.print(' ');
+  }
+}
+
+static void lcd_implementation_drawmenu_sddirectory(uint8_t row, const char* pstr, const char* filename, char* longFilename) {
+  char c;
+  uint8_t n = LCD_WIDTH - 2;
+  lcd.setCursor(0, row);
+  lcd.print(' ');
+  lcd.print(LCD_STR_FOLDER[0]);
+  if (longFilename[0] != '\0') {
+    filename = longFilename;
+    longFilename[LCD_WIDTH-2] = '\0';
+  }
+  while( ((c = *filename) != '\0') && (n>0) ) {
+    lcd.print(c);
+    filename++;
+    n--;
+  }
+  while(n--){
+    lcd.print(' ');
+  }
+}
+
 #define lcd_implementation_drawmenu_back_selected(row, pstr, data) lcd_implementation_drawmenu_generic(row, pstr, LCD_STR_UPLEVEL[0], LCD_STR_UPLEVEL[0])
 #define lcd_implementation_drawmenu_back(row, pstr, data) lcd_implementation_drawmenu_generic(row, pstr, ' ', LCD_STR_UPLEVEL[0])
 #define lcd_implementation_drawmenu_back_RAM_selected(row, str, data) lcd_implementation_drawmenu_generic_RAM(row, str, LCD_STR_UPLEVEL[0], LCD_STR_UPLEVEL[0])
@@ -1275,77 +1251,80 @@ static void lcd_implementation_drawmenu_sddirectory(uint8_t row, const char* pst
 #define lcd_implementation_drawmenu_setlang_selected(row, pstr, data) lcd_implementation_drawmenu_generic(row, pstr, '>', ' ')
 #define lcd_implementation_drawmenu_setlang(row, pstr, data) lcd_implementation_drawmenu_generic(row, pstr, ' ', ' ')
 
-static void lcd_implementation_quick_feedback()
-{
-#ifdef LCD_USE_I2C_BUZZER
-	#if !defined(LCD_FEEDBACK_FREQUENCY_HZ) || !defined(LCD_FEEDBACK_FREQUENCY_DURATION_MS)
-	  lcd_buzz(1000/6,100);
-	#else
-	  lcd_buzz(LCD_FEEDBACK_FREQUENCY_DURATION_MS,LCD_FEEDBACK_FREQUENCY_HZ);
-	#endif
-#elif defined(BEEPER) && BEEPER > -1
+static void lcd_implementation_quick_feedback() {
+  #ifdef LCD_USE_I2C_BUZZER
+	  #if !defined(LCD_FEEDBACK_FREQUENCY_HZ) || !defined(LCD_FEEDBACK_FREQUENCY_DURATION_MS)
+	    lcd_buzz(1000/6,100);
+	  #else
+	    lcd_buzz(LCD_FEEDBACK_FREQUENCY_DURATION_MS,LCD_FEEDBACK_FREQUENCY_HZ);
+	  #endif
+  #elif defined(BEEPER) && BEEPER > -1
     SET_OUTPUT(BEEPER);
-	#if !defined(LCD_FEEDBACK_FREQUENCY_HZ) || !defined(LCD_FEEDBACK_FREQUENCY_DURATION_MS)
-    for(int8_t i=0;i<10;i++)
-    {
-      WRITE(BEEPER,HIGH);
-      delayMicroseconds(100);
-      WRITE(BEEPER,LOW);
-      delayMicroseconds(100);
-    }
+	  #if !defined(LCD_FEEDBACK_FREQUENCY_HZ) || !defined(LCD_FEEDBACK_FREQUENCY_DURATION_MS)
+      for(int8_t i=0;i<10;i++) {
+        WRITE(BEEPER,HIGH);
+        delayMicroseconds(100);
+        WRITE(BEEPER,LOW);
+        delayMicroseconds(100);
+      }
     #else
-    for(int8_t i=0;i<(LCD_FEEDBACK_FREQUENCY_DURATION_MS / (1000 / LCD_FEEDBACK_FREQUENCY_HZ));i++)
-    {
-      WRITE(BEEPER,HIGH);
-      delayMicroseconds(1000000 / LCD_FEEDBACK_FREQUENCY_HZ / 2);
-      WRITE(BEEPER,LOW);
-      delayMicroseconds(1000000 / LCD_FEEDBACK_FREQUENCY_HZ / 2);
-    }
+      for(int8_t i=0;i<(LCD_FEEDBACK_FREQUENCY_DURATION_MS / (1000 / LCD_FEEDBACK_FREQUENCY_HZ));i++) {
+        WRITE(BEEPER,HIGH);
+        delayMicroseconds(1000000 / LCD_FEEDBACK_FREQUENCY_HZ / 2);
+        WRITE(BEEPER,LOW);
+        delayMicroseconds(1000000 / LCD_FEEDBACK_FREQUENCY_HZ / 2);
+      }
     #endif
-#endif
+  #endif
 }
 
 #ifdef LCD_HAS_STATUS_INDICATORS
-static void lcd_implementation_update_indicators()
-{
-  #if defined(LCD_I2C_PANELOLU2) || defined(LCD_I2C_VIKI)
-    //set the LEDS - referred to as backlights by the LiquidTWI2 library 
-    static uint8_t ledsprev = 0;
-    uint8_t leds = 0;
-    if (target_temperature_bed > 0) leds |= LED_A;
-    if (target_temperature[0] > 0) leds |= LED_B;
-    if (fanSpeed) leds |= LED_C;
-    #if EXTRUDERS > 1  
-      if (target_temperature[1] > 0) leds |= LED_C;
+  static void lcd_implementation_update_indicators() {
+    #if defined(LCD_I2C_PANELOLU2) || defined(LCD_I2C_VIKI)
+      //set the LEDS - referred to as backlights by the LiquidTWI2 library 
+      static uint8_t ledsprev = 0;
+      uint8_t leds = 0;
+      if (target_temperature_bed > 0) {
+        leds |= LED_A;
+      }
+      if (target_temperature[0] > 0) {
+        leds |= LED_B;
+      }
+      if (fanSpeed) {
+        leds |= LED_C;
+      }
+      #if EXTRUDERS > 1  
+        if (target_temperature[1] > 0) {
+          leds |= LED_C;
+        }
+      #endif
+      if (leds != ledsprev) {
+        lcd.setBacklight(leds);
+        ledsprev = leds;
+      }
     #endif
-    if (leds != ledsprev) {
-      lcd.setBacklight(leds);
-      ledsprev = leds;
-    }
-  #endif
-}
+  }
 #endif
 
 #ifdef LCD_HAS_SLOW_BUTTONS
-extern uint32_t blocking_enc;
+  extern uint32_t blocking_enc;
 
-static uint8_t lcd_implementation_read_slow_buttons()
-{
-  #ifdef LCD_I2C_TYPE_MCP23017
-  uint8_t slow_buttons;
-    // Reading these buttons this is likely to be too slow to call inside interrupt context
-    // so they are called during normal lcd_update
-    slow_buttons = lcd.readButtons() << B_I2C_BTN_OFFSET; 
-    #if defined(LCD_I2C_VIKI)
-    if(slow_buttons & (B_MI|B_RI)) { //LCD clicked
-       if(blocking_enc > millis()) {
-         slow_buttons &= ~(B_MI|B_RI); // Disable LCD clicked buttons if screen is updated
-       }
-    }
+  static uint8_t lcd_implementation_read_slow_buttons() {
+    #ifdef LCD_I2C_TYPE_MCP23017
+      uint8_t slow_buttons;
+      // Reading these buttons this is likely to be too slow to call inside interrupt context
+      // so they are called during normal lcd_update
+      slow_buttons = lcd.readButtons() << B_I2C_BTN_OFFSET; 
+      #if defined(LCD_I2C_VIKI)
+        if(slow_buttons & (B_MI|B_RI)) { //LCD clicked
+          if(blocking_enc > millis()) {
+            slow_buttons &= ~(B_MI|B_RI); // Disable LCD clicked buttons if screen is updated
+          }
+        }
+      #endif
+      return slow_buttons; 
     #endif
-    return slow_buttons; 
-  #endif
-}
+  }
 #endif
 
 #endif//ULTRA_LCD_IMPLEMENTATION_HITACHI_HD44780_H
