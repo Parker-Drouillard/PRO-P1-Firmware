@@ -22,8 +22,8 @@ void adc_init(void) {
 	ADMUX |= (1 << REFS0);
 	ADCSRA |= (1 << ADEN);
 //	ADCSRA |= (1 << ADIF) | (1 << ADSC);
-	DIDR0 = (ADC_CHAN_MSK & 0xff);
-	DIDR2 = (ADC_CHAN_MSK >> 8);
+	DIDR0 = (ADC_CHAN_MSK & 0xff); //0b0000000001011111
+	DIDR2 = (ADC_CHAN_MSK >> 8);  //0b0000000000000010
 	adc_reset();
 //	adc_sim_mask = 0b0101;
 //	adc_sim_mask = 0b100101;

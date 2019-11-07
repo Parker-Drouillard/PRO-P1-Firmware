@@ -1442,7 +1442,10 @@ void adc_ready(void) { //callback from adc when sampling finished
 	current_temperature_raw[0] = adc_values[TEMP_0_PIN];
   current_temperature_raw[1] = adc_values[TEMP_1_PIN];
 	current_temperature_bed_raw = adc_values[TEMP_BED_PIN];	
- 	current_temperature_raw_pinda = adc_values[TEMP_PINDA_PIN];
+ 	//current_temperature_raw_pinda = analogRead(7);
+   current_temperature_raw_pinda = adc_values[TEMP_PINDA_PIN];
+  // current_temperature_raw_pinda = adc_values[TEMP_PINDA_PIN];
+  // current_temperature_raw_pinda = analogRead(54 +  7);
 
 #ifdef VOLT_PWR_PIN
 	current_voltage_raw_pwr = adc_values[4];
