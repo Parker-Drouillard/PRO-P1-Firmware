@@ -178,11 +178,9 @@ uint8_t lcd_status_message_level;
 char lcd_status_message[LCD_WIDTH + 1] = ""; //////WELCOME!
 unsigned char firstrun = 1;
 
-#ifdef DOGLCD
-  #include "dogm_lcd_implementation.h"
-#else
-  #include "ultralcd_implementation_hitachi_HD44780.h"
-#endif
+
+#include "ultralcd_implementation_hitachi_HD44780.h"
+
 
 /** forward declarations **/
 
@@ -2525,133 +2523,136 @@ void lcd_wait_for_heater() {
 //Modified by Parker Drouillard - 7 Nov 2019
 //Added functionality for 2 Extruders.
 void lcd_wait_for_cool_down() {
-	lcd_set_custom_characters_degree();
-	for(int i=0; i < EXTRUDERS; i++){ //shut off all extruders
-      setTargetHotend(0,i);
-	}
-	setTargetBed(0);
-	//If either extruder1 or 2 or the heated bed are above max temp for calibration, wait
-	//NEED TO ADD SUPPORT FOR DYNAMIC # EXTRUDERS
-	while ((degHotend(0)>MAX_HOTEND_TEMP_CALIBRATION) || (degHotend(1)>MAX_HOTEND_TEMP_CALIBRATION) || (degBed() > MAX_BED_TEMP_CALIBRATION)) {
-		lcd_display_message_fullscreen_P(MSG_WAITING_TEMP);
+  lcd_set_custom_characters_degree();
+  for(int i=0; i < EXTRUDERS; i++){ //shut off all extruders
+    setTargetHotend(0,i);
+  }
+  setTargetBed(0);
+  //If either extruder1 or 2 or the heated bed are above max temp for calibration, wait
+  //NEED TO ADD SUPPORT FOR DYNAMIC # EXTRUDERS
+  while ((degHotend(0)>MAX_HOTEND_TEMP_CALIBRATION) || (degHotend(1)>MAX_HOTEND_TEMP_CALIBRATION) || (degBed() > MAX_BED_TEMP_CALIBRATION)) {
+	lcd_display_message_fullscreen_P(MSG_WAITING_TEMP);
 
-		//Print E1 & E2 Temp
-		for(int i = 0; i < 2; i++){
-		  lcd.setCursor(0, 2+i);
-		  // lcd.print(LCD_STR_THERMOMETER[0]);
-		  lcd.print("E");
-		  lcd.print(i);
-		  lcd.print(" ");
-		  lcd.print(ftostr3(degHotend(i)));
-		  lcd.print("/0");		
-		  lcd.print(LCD_STR_DEGREE);
-		}
-
-		//Print Bed temp
-		lcd.setCursor(11, 4);
-		lcd.print(LCD_STR_BEDTEMP[0]);
-		lcd.print(ftostr3(degBed()));
-		lcd.print("/0");		
-		lcd.print(LCD_STR_DEGREE);
-		lcd_set_custom_characters();
-		delay_keep_alive(1000);
-		serialecho_temperatures();
+	//Print E1 & E2 Temp
+	for(int i = 0; i < 2; i++){
+	  lcd.setCursor(0, 2+i);
+	  // lcd.print(LCD_STR_THERMOMETER[0]);
+	  lcd.print("E");
+	  lcd.print(i);
+	  lcd.print(" ");
+	  lcd.print(ftostr3(degHotend(i)));
+	  lcd.print("/0");		
+	  lcd.print(LCD_STR_DEGREE);
 	}
-	lcd_set_custom_characters_arrows();
-	lcd_update_enable(true);
+
+	//Print Bed temp
+	lcd.setCursor(11, 4);
+	lcd.print(LCD_STR_BEDTEMP[0]);
+	lcd.print(ftostr3(degBed()));
+	lcd.print("/0");		
+	lcd.print(LCD_STR_DEGREE);
+	lcd_set_custom_characters();
+	delay_keep_alive(1000);
+	serialecho_temperatures();
+  }
+  lcd_set_custom_characters_arrows();
+  lcd_update_enable(true);
 }
+
 
 // Lets the user move the Z carriage up to the end stoppers.
 // When done, it sets the current Z to Z_MAX_POS and returns true.
 // Otherwise the Z calibration is not changed and false is returned.
 
 #ifndef TMC2130
-bool lcd_calibrate_z_end_stop_manual(bool only_z) {
-    bool clean_nozzle_asked = false;
+  bool lcd_calibrate_z_end_stop_manual(bool only_z) {
+  bool clean_nozzle_asked = false;
 
-    // Don't know where we are. Let's claim we are Z=0, so the soft end stops will not be triggered when moving up.
-    current_position[Z_AXIS] = 0;
-    plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+  // Don't know where we are. Let's claim we are Z=0, so the soft end stops will not be triggered when moving up.
+  current_position[Z_AXIS] = 0;
+  plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
 
-    // Until confirmed by the confirmation dialog.
+  // Until confirmed by the confirmation dialog.
+  for (;;) {
+    unsigned long previous_millis_cmd = millis();
+    const char   *msg                 = only_z ? MSG_MOVE_CARRIAGE_TO_THE_TOP_Z : MSG_MOVE_CARRIAGE_TO_THE_TOP;
+    const char   *msg_next            = lcd_display_message_fullscreen_P(msg);
+    const bool    multi_screen        = msg_next != NULL;
+    unsigned long previous_millis_msg = millis();
+    // Until the user finishes the z up movement.
+    encoderDiff = 0;
+    encoderPosition = 0;
     for (;;) {
-        unsigned long previous_millis_cmd = millis();
-        const char   *msg                 = only_z ? MSG_MOVE_CARRIAGE_TO_THE_TOP_Z : MSG_MOVE_CARRIAGE_TO_THE_TOP;
-        const char   *msg_next            = lcd_display_message_fullscreen_P(msg);
-        const bool    multi_screen        = msg_next != NULL;
-        unsigned long previous_millis_msg = millis();
-        // Until the user finishes the z up movement.
+	  // if (millis() - previous_millis_cmd > LCD_TIMEOUT_TO_STATUS)
+	  // goto canceled;
+      manage_heater();
+      manage_inactivity(true);
+      if (abs(encoderDiff) >= ENCODER_PULSES_PER_STEP) {
+        delay(50);
+        previous_millis_cmd = millis();
+        encoderPosition += abs(encoderDiff / ENCODER_PULSES_PER_STEP);
         encoderDiff = 0;
-        encoderPosition = 0;
-        for (;;) {
-		// if (millis() - previous_millis_cmd > LCD_TIMEOUT_TO_STATUS)
-		// goto canceled;
-            manage_heater();
-            manage_inactivity(true);
-            if (abs(encoderDiff) >= ENCODER_PULSES_PER_STEP) {
-                delay(50);
-                previous_millis_cmd = millis();
-                encoderPosition += abs(encoderDiff / ENCODER_PULSES_PER_STEP);
-                encoderDiff = 0;
-                if (! planner_queue_full()) {
-                    // Only move up, whatever direction the user rotates the encoder.
-                    current_position[Z_AXIS] += fabs(encoderPosition);
-                    encoderPosition = 0;
-                    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], manual_feedrate[Z_AXIS] / 60, active_extruder);
-                }
-            }
-            if (lcd_clicked()) {
-                // Abort a move if in progress.
-                planner_abort_hard();
-                while (lcd_clicked()) ;
-                delay(10);
-                while (lcd_clicked()) ;
-                break;
-            }
-            if (multi_screen && millis() - previous_millis_msg > 5000) {
-                if (msg_next == NULL)
-                    msg_next = msg;
-                msg_next = lcd_display_message_fullscreen_P(msg_next);
-                previous_millis_msg = millis();
-            }
+        if (! planner_queue_full()) {
+          // Only move up, whatever direction the user rotates the encoder.
+          current_position[Z_AXIS] += fabs(encoderPosition);
+          encoderPosition = 0;
+          plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], manual_feedrate[Z_AXIS] / 60, active_extruder);
         }
-
-        if (! clean_nozzle_asked) {
-            lcd_show_fullscreen_message_and_wait_P(MSG_CONFIRM_NOZZLE_CLEAN);
-            clean_nozzle_asked = true;
-        }
-		
-
-        // Let the user confirm, that the Z carriage is at the top end stoppers.
-        int8_t result = lcd_show_fullscreen_message_yes_no_and_wait_P(MSG_CONFIRM_CARRIAGE_AT_THE_TOP, false);
-        if (result == -1)
-            goto canceled;
-        else if (result == 1)
-            goto calibrated;
-        // otherwise perform another round of the Z up dialog.
+      }
+      if (lcd_clicked()) {
+        // Abort a move if in progress.
+        planner_abort_hard();
+        while (lcd_clicked()){
+		  //wait
+		} ;
+        delay(10);
+        while (lcd_clicked()){
+          //wait
+		} ;
+        break;
+      }
+      if (multi_screen && millis() - previous_millis_msg > 5000) {
+        if (msg_next == NULL) {
+          msg_next = msg;
+		}
+        msg_next = lcd_display_message_fullscreen_P(msg_next);
+        previous_millis_msg = millis();
+      }
     }
 
-calibrated:
-    // Let the machine think the Z axis is a bit higher than it is, so it will not home into the bed
-    // during the search for the induction points.
-    current_position[Z_AXIS] = Z_MAX_POS-3.f;
-    plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-    
-    
-    if(only_z){
-        lcd_display_message_fullscreen_P(MSG_MEASURE_BED_REFERENCE_HEIGHT_LINE1);
-        lcd_implementation_print_at(0, 3, 1);
-        lcd_printPGM(MSG_MEASURE_BED_REFERENCE_HEIGHT_LINE2);
-    }else{
-		//lcd_show_fullscreen_message_and_wait_P(MSG_PAPER);
-        lcd_display_message_fullscreen_P(MSG_FIND_BED_OFFSET_AND_SKEW_LINE1);
-        lcd_implementation_print_at(0, 2, 1);
-        lcd_printPGM(MSG_FIND_BED_OFFSET_AND_SKEW_LINE2);
-    }    
-    return true;
+    if (! clean_nozzle_asked) {
+      lcd_show_fullscreen_message_and_wait_P(MSG_CONFIRM_NOZZLE_CLEAN);
+      clean_nozzle_asked = true;
+    }	
 
-canceled:
-    return false;
+    // Let the user confirm, that the Z carriage is at the top end stoppers.
+    int8_t result = lcd_show_fullscreen_message_yes_no_and_wait_P(MSG_CONFIRM_CARRIAGE_AT_THE_TOP, false);
+    if (result == -1) {
+      return false;
+    } else if (result == 1) {
+      goto calibrated;
+    }
+    // otherwise perform another round of the Z up dialog.
+  }
+
+  calibrated:
+  // Let the machine think the Z axis is a bit higher than it is, so it will not home into the bed
+  // during the search for the induction points.
+  current_position[Z_AXIS] = Z_MAX_POS-3.f;
+  plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+    
+    
+  if(only_z)  {
+    lcd_display_message_fullscreen_P(MSG_MEASURE_BED_REFERENCE_HEIGHT_LINE1);
+    lcd_implementation_print_at(0, 3, 1);
+    lcd_printPGM(MSG_MEASURE_BED_REFERENCE_HEIGHT_LINE2);
+  } else {
+    //lcd_show_fullscreen_message_and_wait_P(MSG_PAPER);
+    lcd_display_message_fullscreen_P(MSG_FIND_BED_OFFSET_AND_SKEW_LINE1);
+    lcd_implementation_print_at(0, 2, 1);
+    lcd_printPGM(MSG_FIND_BED_OFFSET_AND_SKEW_LINE2);
+  }    
+  return true;
 }
 
 #endif // TMC2130
@@ -2731,6 +2732,7 @@ const char* lcd_display_message_fullscreen_P(const char *msg, uint8_t &nlines) {
   nlines = row;
   return multi_screen ? msgend : NULL;
 } //lcd_display_message_fullscreen_P
+
 
 void lcd_show_fullscreen_message_and_wait_P(const char *msg) {
   const char *msg_next = lcd_display_message_fullscreen_P(msg);
@@ -3561,212 +3563,219 @@ void lcd_toshiba_flash_air_compatibility_toggle()
 }
 
 void lcd_v2_calibration() {
-	bool loaded = lcd_show_fullscreen_message_yes_no_and_wait_P(MSG_PLA_FILAMENT_LOADED, false, true);
-	if (loaded) {
-		lcd_commands_type = LCD_COMMAND_V2_CAL;
+  bool loaded = lcd_show_fullscreen_message_yes_no_and_wait_P(MSG_PLA_FILAMENT_LOADED, false, true);
+  if (loaded) {
+	lcd_commands_type = LCD_COMMAND_V2_CAL;
+  } else {
+	lcd_display_message_fullscreen_P(MSG_PLEASE_LOAD_PLA);
+	for (int i = 0; i < 20; i++) { //wait max. 2s
+	  delay_keep_alive(100);
+	  if (lcd_clicked()) {
+	    while (lcd_clicked()){
+		  //wait
+	    };
+	    delay(10);
+	    while (lcd_clicked()){
+		  //wait
+	    };
+	    break;
+	  }
 	}
-	else {
-		lcd_display_message_fullscreen_P(MSG_PLEASE_LOAD_PLA);
-		for (int i = 0; i < 20; i++) { //wait max. 2s
-			delay_keep_alive(100);
-			if (lcd_clicked()) {
-				while (lcd_clicked());
-				delay(10);
-				while (lcd_clicked());
-				break;
-			}
-		}
-	}
-	lcd_return_to_status();
-	lcd_update_enable(true);
+  }
+  lcd_return_to_status();
+  lcd_update_enable(true);
 }
 
 void lcd_wizard() {
-	bool result = true;
-	if (calibration_status() != CALIBRATION_STATUS_ASSEMBLED) {
-		result = lcd_show_multiscreen_message_yes_no_and_wait_P(MSG_WIZARD_RERUN, false, false);
-	}
-	if (result) {
-		calibration_status_store(CALIBRATION_STATUS_ASSEMBLED);
-		lcd_wizard(0);
-	}
-	else {
-		lcd_return_to_status();
-		lcd_update_enable(true);
-		lcd_update(2);
-	}
+  bool result = true;
+  if (calibration_status() != CALIBRATION_STATUS_ASSEMBLED) {
+ 	result = lcd_show_multiscreen_message_yes_no_and_wait_P(MSG_WIZARD_RERUN, false, false);
+  }
+  if (result) {
+	calibration_status_store(CALIBRATION_STATUS_ASSEMBLED);
+	lcd_wizard(0);
+  } else {
+	lcd_return_to_status();
+	lcd_update_enable(true);
+	lcd_update(2);
+  }
 }
 
 void lcd_wizard(int state) {
 
-	bool end = false;
-	int wizard_event;
-	const char *msg = NULL;
-	while (!end) {
-		switch (state) {
-		case 0: // run wizard?
-			wizard_event = lcd_show_multiscreen_message_yes_no_and_wait_P(MSG_WIZARD_WELCOME, false, true);
-			if (wizard_event) {
-				state = 1;
-				eeprom_write_byte((uint8_t*)EEPROM_WIZARD_ACTIVE, 1);
-			}
-			else {
-				eeprom_write_byte((uint8_t*)EEPROM_WIZARD_ACTIVE, 0);
-				end = true;
-			}
-			break;
-		case 1: // restore calibration status
-			switch (calibration_status()) {
-			case CALIBRATION_STATUS_ASSEMBLED: state = 2; break; //run selftest
-			case CALIBRATION_STATUS_XYZ_CALIBRATION: state = 3; break; //run xyz cal.
-			case CALIBRATION_STATUS_Z_CALIBRATION: state = 4; break; //run z cal.
-			case CALIBRATION_STATUS_LIVE_ADJUST: state = 5; break; //run live adjust
-			case CALIBRATION_STATUS_CALIBRATED: end = true; eeprom_write_byte((uint8_t*)EEPROM_WIZARD_ACTIVE, 0); break;
-			default: state = 2; break; //if calibration status is unknown, run wizard from the beginning
-			}
-			break; 
-		case 2: //selftest
-			lcd_show_fullscreen_message_and_wait_P(MSG_WIZARD_SELFTEST);
-			wizard_event = lcd_selftest();
-			if (wizard_event) {
-				calibration_status_store(CALIBRATION_STATUS_XYZ_CALIBRATION);
-				state = 3;
-			}
-			else end = true;
-			break;
-		case 3: //xyz cal.
-			lcd_show_fullscreen_message_and_wait_P(MSG_WIZARD_XYZ_CAL);
-			wizard_event = gcode_M45(false, 0);
-			if (wizard_event) state = 5;
-			else end = true;
-			break;
-		case 4: //z cal.
-			lcd_show_fullscreen_message_and_wait_P(MSG_WIZARD_Z_CAL);
-			wizard_event = lcd_show_fullscreen_message_yes_no_and_wait_P(MSG_STEEL_SHEET_CHECK, false, false);
-			if (!wizard_event) lcd_show_fullscreen_message_and_wait_P(MSG_PLACE_STEEL_SHEET);
-			wizard_event = gcode_M45(true, 0);
-			if (wizard_event) state = 11; //shipped, no need to set first layer, go to final message directly
-			else end = true;
-			break;
-		case 5: //is filament loaded?
-				//start to preheat nozzle and bed to save some time later
-			setTargetHotend(PLA_PREHEAT_HOTEND_TEMP, 0);
-			setTargetBed(PLA_PREHEAT_HPB_TEMP);
-			wizard_event = lcd_show_fullscreen_message_yes_no_and_wait_P(MSG_WIZARD_FILAMENT_LOADED, false);
-			if (wizard_event) state = 8;
-			else state = 6;
-
-			break;
-		case 6: //waiting for preheat nozzle for PLA;
-#ifndef SNMM
-			lcd_display_message_fullscreen_P(MSG_WIZARD_WILL_PREHEAT);
-			current_position[Z_AXIS] = 100; //move in z axis to make space for loading filament
-			plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], homing_feedrate[Z_AXIS] / 60, active_extruder);
-			delay_keep_alive(2000);
-			lcd_display_message_fullscreen_P(MSG_WIZARD_HEATING);
-			while (abs(degHotend(0) - PLA_PREHEAT_HOTEND_TEMP) > 3) {
-				// lcd_display_message_fullscreen_P(MSG_WIZARD_HEATING);
-
-				// lcd.setCursor(0, 4);
-				// lcd.print(LCD_STR_THERMOMETER[0]);
-				// lcd.print(ftostr3(degHotend(0)));
-				// lcd.print("/");
-				// lcd.print(PLA_PREHEAT_HOTEND_TEMP);
-				// lcd.print(LCD_STR_DEGREE);
-				// lcd_set_custom_characters();
-				// delay_keep_alive(1000);
-			}
-#endif //not SNMM
-			state = 7;
-			break;
-		case 7: //load filament 
-#ifdef PAT9125
-			fsensor_block();
-#endif //PAT9125
-			lcd_show_fullscreen_message_and_wait_P(MSG_WIZARD_LOAD_FILAMENT);
-			lcd_update_enable(false);
-			lcd_implementation_clear();
-			lcd_print_at_PGM(0, 2, MSG_LOADING_FILAMENT);
-#ifdef SNMM
-			change_extr(0);
-#endif
-			gcode_M701();
-#ifdef PAT9125
-			fsensor_unblock();
-#endif //PAT9125
-			state = 9;
-			break;
-		case 8:
-			wizard_event = lcd_show_fullscreen_message_yes_no_and_wait_P(MSG_WIZARD_PLA_FILAMENT, false, true);
-			if (wizard_event) state = 9;
-			else end = true;
-			break;
-		case 9:
-			lcd_show_fullscreen_message_and_wait_P(MSG_WIZARD_V2_CAL);
-			lcd_show_fullscreen_message_and_wait_P(MSG_WIZARD_V2_CAL_2);
-			lcd_commands_type = LCD_COMMAND_V2_CAL;
-			end = true;
-			break;
-		case 10: //repeat first layer cal.?
-			wizard_event = lcd_show_multiscreen_message_yes_no_and_wait_P(MSG_WIZARD_REPEAT_V2_CAL, false);
-			if (wizard_event) {
-				//reset status and live adjust z value in eeprom
-				calibration_status_store(CALIBRATION_STATUS_LIVE_ADJUST);
-				lcd_show_fullscreen_message_and_wait_P(MSG_WIZARD_CLEAN_HEATBED);
-				state = 9;
-			}
-			else {
-				state = 11;
-			}
-			break;
-		case 11: //we are finished
-			eeprom_write_byte((uint8_t*)EEPROM_WIZARD_ACTIVE, 0);
-			end = true;
-			break;
-
-		default: break;
+  bool end = false;
+  int wizard_event;
+  const char *msg = NULL;
+  while (!end) {
+	switch (state) {
+  	  case 0: // run wizard?
+		wizard_event = lcd_show_multiscreen_message_yes_no_and_wait_P(MSG_WIZARD_WELCOME, false, true);
+		if (wizard_event) {
+	      state = 1;
+		  eeprom_write_byte((uint8_t*)EEPROM_WIZARD_ACTIVE, 1);
+		} else {
+		  eeprom_write_byte((uint8_t*)EEPROM_WIZARD_ACTIVE, 0);
+		  end = true;
 		}
-	}
-
-	SERIAL_ECHOPGM("State: ");
-	MYSERIAL.println(state);
-	switch (state) { //final message
-	case 0: //user dont want to use wizard
-		msg = MSG_WIZARD_QUIT;
+	  break;
+	  case 1: // restore calibration status
+		switch (calibration_status()) {
+	      case CALIBRATION_STATUS_ASSEMBLED: state = 2; break; //run selftest
+		  case CALIBRATION_STATUS_XYZ_CALIBRATION: state = 3; break; //run xyz cal.
+		  case CALIBRATION_STATUS_Z_CALIBRATION: state = 4; break; //run z cal.
+		  case CALIBRATION_STATUS_LIVE_ADJUST: state = 5; break; //run live adjust
+		  case CALIBRATION_STATUS_CALIBRATED: end = true; eeprom_write_byte((uint8_t*)EEPROM_WIZARD_ACTIVE, 0); break;
+		  default: state = 2; break; //if calibration status is unknown, run wizard from the beginning
+		}
+	  break; 
+	  case 2: //selftest
+		lcd_show_fullscreen_message_and_wait_P(MSG_WIZARD_SELFTEST);
+		wizard_event = lcd_selftest();
+		if (wizard_event) {
+		  calibration_status_store(CALIBRATION_STATUS_XYZ_CALIBRATION);
+		  state = 3;
+		} else {
+		  end = true;
+		}
 		break;
+	  case 3: //xyz cal.
+		lcd_show_fullscreen_message_and_wait_P(MSG_WIZARD_XYZ_CAL);
+		wizard_event = gcode_M45(false, 0);
+		if (wizard_event) {
+		  state = 5;
+		} else {
+		  end = true;
+		}
+		break;
+	  case 4: //z cal.
+		lcd_show_fullscreen_message_and_wait_P(MSG_WIZARD_Z_CAL);
+		wizard_event = lcd_show_fullscreen_message_yes_no_and_wait_P(MSG_STEEL_SHEET_CHECK, false, false);
+		if (!wizard_event) {
+		  lcd_show_fullscreen_message_and_wait_P(MSG_PLACE_STEEL_SHEET);
+		}
+		wizard_event = gcode_M45(true, 0);
+		if (wizard_event) {  //shipped, no need to set first layer, go to final message directly
+		  state = 11;
+		} else {
+		  end = true;
+		}
+	  break;
+	  case 5: //is filament loaded?
+	    //start to preheat nozzle and bed to save some time later
+		setTargetHotend(PLA_PREHEAT_HOTEND_TEMP, 0);
+		setTargetBed(PLA_PREHEAT_HPB_TEMP);
+		wizard_event = lcd_show_fullscreen_message_yes_no_and_wait_P(MSG_WIZARD_FILAMENT_LOADED, false);
+		if (wizard_event) {
+		  state = 8;
+		} else {
+		  state = 6;
+		}
+      break;
+	  case 6: //waiting for preheat nozzle for PLA;
+        #ifndef SNMM
+		  lcd_display_message_fullscreen_P(MSG_WIZARD_WILL_PREHEAT);
+		  current_position[Z_AXIS] = 100; //move in z axis to make space for loading filament
+		  plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], homing_feedrate[Z_AXIS] / 60, active_extruder);
+		  delay_keep_alive(2000);
+		  lcd_display_message_fullscreen_P(MSG_WIZARD_HEATING);
+		  while (abs(degHotend(0) - PLA_PREHEAT_HOTEND_TEMP) > 3 && abs(degHotend(1) - PLA_PREHEAT_HOTEND1_TEMP)) {
+		    //wait
+		  }
+        #endif //not SNMM
+		state = 7;
+	  break;
+	  case 7: //load filament 
+        #ifdef PAT9125
+		  fsensor_block();
+        #endif //PAT9125
+		  lcd_show_fullscreen_message_and_wait_P(MSG_WIZARD_LOAD_FILAMENT);
+		  lcd_update_enable(false);
+		  lcd_implementation_clear();
+		  lcd_print_at_PGM(0, 2, MSG_LOADING_FILAMENT);
+        #ifdef SNMM
+		  change_extr(0);
+        #endif
+		  gcode_M701();
+        #ifdef PAT9125
+		  fsensor_unblock();
+        #endif //PAT9125
+		  state = 9;
+	  break;
+	  case 8:
+		wizard_event = lcd_show_fullscreen_message_yes_no_and_wait_P(MSG_WIZARD_PLA_FILAMENT, false, true);
+		if (wizard_event){
+		  state = 9;
+		} else {
+		  end = true;
+		}
+	  break;
+	  case 9:
+		lcd_show_fullscreen_message_and_wait_P(MSG_WIZARD_V2_CAL);
+		lcd_show_fullscreen_message_and_wait_P(MSG_WIZARD_V2_CAL_2);
+		lcd_commands_type = LCD_COMMAND_V2_CAL;
+		end = true;
+	  break;
+	  case 10: //repeat first layer cal.?
+		wizard_event = lcd_show_multiscreen_message_yes_no_and_wait_P(MSG_WIZARD_REPEAT_V2_CAL, false);
+		if (wizard_event) {
+	      //reset status and live adjust z value in eeprom
+		  calibration_status_store(CALIBRATION_STATUS_LIVE_ADJUST);
+		  lcd_show_fullscreen_message_and_wait_P(MSG_WIZARD_CLEAN_HEATBED);
+		  state = 9;
+		} else {
+		  state = 11;
+		}
+	  break;
+	  case 11: //we are finished
+		eeprom_write_byte((uint8_t*)EEPROM_WIZARD_ACTIVE, 0);
+		end = true;
+	  break;
+
+	  default:
+	  break;
+	}
+  }
+
+  SERIAL_ECHOPGM("State: ");
+  MYSERIAL.println(state);
+  switch (state) { //final message
+	case 0: //user dont want to use wizard
+	  msg = MSG_WIZARD_QUIT;
+	break;
 
 	case 1: //printer was already calibrated
-		msg = MSG_WIZARD_DONE;
-		break;
+	  msg = MSG_WIZARD_DONE;
+	break;
 	case 2: //selftest
-		msg = MSG_WIZARD_CALIBRATION_FAILED;
-		break;
+	  msg = MSG_WIZARD_CALIBRATION_FAILED;
+	break;
 	case 3: //xyz cal.
 		msg = MSG_WIZARD_CALIBRATION_FAILED;
-		break;
+	break;
 	case 4: //z cal.
-		msg = MSG_WIZARD_CALIBRATION_FAILED;
-		break;
+	  msg = MSG_WIZARD_CALIBRATION_FAILED;
+	break;
 	case 8:
-		msg = MSG_WIZARD_INSERT_CORRECT_FILAMENT;
-		break;
+	  msg = MSG_WIZARD_INSERT_CORRECT_FILAMENT;
+	break;
 	case 9: break; //exit wizard for v2 calibration, which is implemted in lcd_commands (we need lcd_update running)
 	case 11: //we are finished
 
-		msg = MSG_WIZARD_DONE;
-		lcd_reset_alert_level();
-		lcd_setstatuspgm(WELCOME_MSG);
-		break;
+	  msg = MSG_WIZARD_DONE;
+	  lcd_reset_alert_level();
+	  lcd_setstatuspgm(WELCOME_MSG);
+	break;
 
 	default:
-		msg = MSG_WIZARD_QUIT;
-		break;
-
-	}
-	if (state != 9) lcd_show_fullscreen_message_and_wait_P(msg);
-	lcd_update_enable(true);
-	lcd_return_to_status();
-	lcd_update(2);
+	  msg = MSG_WIZARD_QUIT;
+	  break;
+  }
+  if (state != 9) {
+    lcd_show_fullscreen_message_and_wait_P(msg);
+  }
+  lcd_update_enable(true);
+  lcd_return_to_status();
+  lcd_update(2);
 }
 
 
@@ -3785,40 +3794,37 @@ static void lcd_settings_menu() {
 	  MENU_ITEM(gcode, MSG_DISABLE_STEPPERS, PSTR("M84"));
   }
   if (!farm_mode) { //dont show in menu if we are in farm mode
-	  switch (SilentModeMenu) {
+	switch (SilentModeMenu) {
 	  case 0: MENU_ITEM(function, MSG_SILENT_MODE_OFF, lcd_silent_mode_set); break;
 	  case 1: MENU_ITEM(function, MSG_SILENT_MODE_ON, lcd_silent_mode_set); break;
 	  case 2: MENU_ITEM(function, MSG_AUTO_MODE_ON, lcd_silent_mode_set); break;
 	  default: MENU_ITEM(function, MSG_SILENT_MODE_OFF, lcd_silent_mode_set); break;
-	  }
+	}
   }
 
 #ifdef PAT9125
-#ifndef DEBUG_DISABLE_FSENSORCHECK
-  if (FSensorStateMenu == 0) {
+  #ifndef DEBUG_DISABLE_FSENSORCHECK
+    if (FSensorStateMenu == 0) {
       if (fsensor_not_responding){
-          // Filament sensor not working
-          MENU_ITEM(function, MSG_FSENSOR_NA, lcd_fsensor_state_set);
-          MENU_ITEM(function, MSG_FSENS_AUTOLOAD_NA, lcd_fsensor_fail);
+        // Filament sensor not working
+        MENU_ITEM(function, MSG_FSENSOR_NA, lcd_fsensor_state_set);
+        MENU_ITEM(function, MSG_FSENS_AUTOLOAD_NA, lcd_fsensor_fail);
+      } else {
+        // Filament sensor turned off, working, no problems
+        MENU_ITEM(function, MSG_FSENSOR_OFF, lcd_fsensor_state_set);
+        MENU_ITEM(function, MSG_FSENS_AUTOLOAD_NA, lcd_filament_autoload_info);
       }
-      else{
-          // Filament sensor turned off, working, no problems
-          MENU_ITEM(function, MSG_FSENSOR_OFF, lcd_fsensor_state_set);
-          MENU_ITEM(function, MSG_FSENS_AUTOLOAD_NA, lcd_filament_autoload_info);
-      }
-  } else {
+    } else {
       // Filament sensor turned on, working, no problems
       MENU_ITEM(function, MSG_FSENSOR_ON, lcd_fsensor_state_set);
-      
+     
       if ((filament_autoload_enabled == true)) {
-          MENU_ITEM(function, MSG_FSENS_AUTOLOAD_ON, lcd_set_filament_autoload);
-      }
-      else {
-          MENU_ITEM(function, MSG_FSENS_AUTOLOAD_OFF, lcd_set_filament_autoload);
-      }
-      
-  }
-#endif //DEBUG_DISABLE_FSENSORCHECK
+        MENU_ITEM(function, MSG_FSENS_AUTOLOAD_ON, lcd_set_filament_autoload);
+      } else {
+        MENU_ITEM(function, MSG_FSENS_AUTOLOAD_OFF, lcd_set_filament_autoload);
+      }  
+    }
+  #endif //DEBUG_DISABLE_FSENSORCHECK
 #endif //PAT9125
 
   if (fans_check_enabled == true) {

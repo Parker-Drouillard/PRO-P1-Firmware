@@ -580,6 +580,7 @@ void manage_heater() {
   }
   updateTemperaturesFromRawValues();
 
+  //Check bedtemp
   #ifdef TEMP_RUNAWAY_BED_HYSTERESIS
     temp_runaway_check(0, target_temperature_bed, current_temperature_bed, (int)soft_pwm_bed, true);
   #endif
@@ -803,13 +804,13 @@ static float analog2temp(int raw, uint8_t e) {
   #else
     if(e >= EXTRUDERS)
   #endif
-  {
-    SERIAL_ERROR_START;
-    SERIAL_ERROR((int)e);
-    SERIAL_ERRORLNPGM(" - Invalid extruder number !");
-    kill("", 6);
-    return 0.0;
-  } 
+    {
+      SERIAL_ERROR_START;
+      SERIAL_ERROR((int)e);
+      SERIAL_ERRORLNPGM(" - Invalid extruder number !");
+      kill("", 6);
+      return 0.0;
+    } 
   #ifdef HEATER_0_USES_MAX6675
     if (e == 0) {
       return 0.25 * raw;
@@ -1114,9 +1115,9 @@ void setWatch() {
 	  float __hysteresis = 0;
 	  int __timeout = 0;
 	  bool temp_runaway_check_active = false;
-	  static float __preheat_start[2] = { 0,0}; //currently just bed and one extruder
-	  static int __preheat_counter[2] = { 0,0};
-	  static int __preheat_errors[2] = { 0,0};
+	  static float __preheat_start[3] = { 0,0,0}; //currently just bed and 2 extruders
+	  static int __preheat_counter[3] = { 0,0,0};
+	  static int __preheat_errors[3] = { 0,0,0};
 		
 
     #ifdef 	TEMP_RUNAWAY_BED_TIMEOUT
@@ -1216,7 +1217,7 @@ void setWatch() {
 		  	}
 	  	}
 	  }
-  }
+  }//temp_runaway_check
 
   void temp_runaway_stop(bool isPreheat, bool isBed) {
 	  cancel_heatup = true;

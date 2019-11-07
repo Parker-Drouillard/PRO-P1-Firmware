@@ -104,8 +104,9 @@
 #define TEMP_0_PIN          0   // Analog Input
 #define TEMP_1_PIN          1   // Analog Input
 #define TEMP_2_PIN          5
-#define TEMP_BED_PIN        2   // Analog Input
-#define TEMP_PINDA_PIN      7   // Analog Input
+#define TEMP_BED_PIN        3   // Analog Input
+#define TEMP_PINDA_PIN      5   // Analog Input
+#define PINDA_THERMISTOR    5 //Analog Input
 
 //
 // Heaters / Fans
@@ -163,8 +164,8 @@
       //     beeper/buzzer is connected to pin 33; however, the pin used in the
       //     diagram is actually pin 44, so this is correct.
 
-      #define DOGLCD_A0    70
-      #define DOGLCD_CS    71
+      // #define DOGLCD_A0    70
+      // #define DOGLCD_CS    71
       #define LCD_SCREEN_ROT_180
 
       #define BTN_EN1      85

@@ -677,7 +677,11 @@ static void lcd_implementation_status_screen() {
   //Print EXTRUDER 0 temperature
   lcd.setCursor(0, 0);
   // lcd.print(LCD_STR_THERMOMETER[0]);
-  lcd_printPGM(PSTR("E1 "));
+  if(active_extruder == 0){ //Show active extruder
+    lcd_printPGM(PSTR("E1A "));
+  } else {
+    lcd_printPGM(PSTR("E1  "));
+  }
   lcd.print(itostr3(tCurrent));
   lcd.print('/');
   lcd.print(itostr3left(tTarget));
@@ -708,7 +712,11 @@ static void lcd_implementation_status_screen() {
   //Print EXTRUDER 1 temperature
   lcd.setCursor(0, 1);
   // lcd.print(LCD_STR_THERMOMETER[0]);
-  lcd_printPGM(PSTR("E2 "));
+  if(active_extruder == 1){ //Represent active extruder
+    lcd_printPGM(PSTR("E2A "));
+  } else {
+    lcd_printPGM(PSTR("E2  "));
+  }
   lcd.print(itostr3(tCurrent));
   lcd.print('/');
   lcd.print(itostr3left(tTarget));
@@ -746,7 +754,7 @@ static void lcd_implementation_status_screen() {
    tCurrent=int(degBed() + 0.5);
    tTarget=int(degTargetBed() + 0.5);
    lcd.print(LCD_STR_BEDTEMP[0]);
-   lcd_printPGM(PSTR("B "));
+   lcd_printPGM(PSTR("B  "));
    lcd.print(itostr3(tCurrent));
    lcd.print('/');
    lcd.print(itostr3left(tTarget));
