@@ -20,6 +20,7 @@
 
 #include "fastio.h"
 #include "Configuration.h"
+// #include "HAL.h"
 #include "pins.h"
 
 #ifndef AT90USB

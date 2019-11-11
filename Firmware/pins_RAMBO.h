@@ -15,7 +15,7 @@
   #define KNOWN_BOARD
 #endif
 
-
+#define PINDA_THERMISTOR
 // #define AMBIENT_THERMISTOR
 
 //
@@ -29,16 +29,16 @@
 //
 // Solenoids
 //
-#define SOL0_PIN 5
+// #define SOL0_PIN 5
 
 //
 // Limit Switches
 //
 #define X_MIN_PIN          12
-#define X_MAX_PIN          24 //Used for Fil Runout on E0
+// #define X_MAX_PIN          24 //Used for Fil Runout on E0
 // #define X_MAX_PIN          -1
 #define Y_MIN_PIN          11
-#define Y_MAX_PIN          23 //Used for Fil Runout on E1
+// #define Y_MAX_PIN          23 //Used for Fil Runout on E1
 // #define Y_MAX_PIN          -1
 #define Z_MIN_PIN          10
 #define Z_MAX_PIN          30
@@ -47,14 +47,14 @@
 // Fil Runout switches
 //
 #define FIL_RUNOUT_PIN 24
-// #define FIL_RUNOUT2_PIN 23
+ #define FIL_RUNOUT2_PIN 23
 //#define FR_SENS X_MAX_PIN
 
 //
 // Z Probe (when not Z_MIN_PIN)
 //
 #ifndef Z_MIN_PROBE_PIN
-  #define Z_MIN_PROBE_PIN  30
+  // #define Z_MIN_PROBE_PIN  30
 #endif
 
 //
@@ -105,8 +105,7 @@
 #define TEMP_1_PIN          1   // Analog Input
 // #define TEMP_2_PIN          5
 #define TEMP_BED_PIN        2   // Analog Input
-#define TEMP_PINDA_PIN      5   // Analog Input
-#define PINDA_THERMISTOR
+#define TEMP_PINDA_PIN      7  // Analog Input
 
 //
 // Heaters / Fans
@@ -117,18 +116,22 @@
 #define HEATER_BED_PIN      3
 
 #ifndef FAN_PIN
-  #define FAN_PIN           8
+  #define FAN_PIN           6 //Pin 8 used for solenoid. Switched to Fan1
 #endif
-#define FAN1_PIN            6
+#define FAN1_PIN            2 //Fan2 pin used for Fan1 as solenoid uses fan0
 // #define FAN2_PIN            2
+
+#define E0_FAN_PIN -1
+#define E1_FAN_PIN -1
+#define E2_FAN_PIN -1
 
 //
 // Misc. Functions
 //
-#define SDSS               53
+#define SDSS               53 //PB0
 #define LED_PIN            13
-#define PS_ON_PIN           4
-#define CASE_LIGHT_PIN     46
+//#define PS_ON_PIN           4
+// #define CASE_LIGHT_PIN     46
 
 
 //
@@ -139,15 +142,15 @@
 
 
 // #define KILL_PIN           -1
-#define SDSS               53
+// #define SDSS               53
 
-#define BEEPER 79
-
+// #define BEEPER 79
+  #define BEEPER 74
 
 // LCD / Controller
 //
 #if ENABLED(ULTRA_LCD)
-  // #define KILL_PIN         -1
+  #define KILL_PIN         80
 
   #if ENABLED(NEWPANEL)
 
@@ -159,21 +162,12 @@
     #define LCD_PINS_D7     75
 
     #if ENABLED(VIKI2) || ENABLED(miniVIKI)
-      //#define BEEPER_PIN   44
-      // NB: Panucatt's Viki 2.0 wiring diagram (v1.2) indicates that the
-      //     beeper/buzzer is connected to pin 33; however, the pin used in the
-      //     diagram is actually pin 44, so this is correct.
 
-      // #define DOGLCD_A0    70
-      // #define DOGLCD_CS    71
       #define LCD_SCREEN_ROT_180
 
-      #define BTN_EN1      85
-      #define BTN_EN2      84
-      #define BTN_ENC      83
-
-      #define SD_DETECT_PIN -1   // Pin 72 if using easy adapter board
-
+      #define BTN_EN1      85  
+      #define BTN_EN2      84  //PH2
+      #define BTN_ENC      83 
       #define STAT_LED_RED_PIN 22
       #define STAT_LED_BLUE_PIN 32
 
@@ -191,16 +185,6 @@
     #endif // !VIKI2 && !miniVIKI
 
   #else // !NEWPANEL - old style panel with shift register
-
-    // No Beeper added
-    //#define BEEPER_PIN     33
-
-    // buttons are attached to a shift register
-    // Not wired yet
-    //#define SHIFT_CLK 38
-    //#define SHIFT_LD 42
-    //#define SHIFT_OUT 40
-    //#define SHIFT_EN 17
 
     #define LCD_PINS_RS     75
     #define LCD_PINS_ENABLE 17

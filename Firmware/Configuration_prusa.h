@@ -42,6 +42,9 @@
 const bool X_MIN_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
 const bool Y_MIN_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
 const bool Z_MIN_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
+const bool FIL_RUNOUT_PIN_INVERTING = false;
+const bool FIL_RUNOUT2_PIN_INVERTING = false;
+
 
 // Direction inverting
 #define INVERT_X_DIR false    // for Mendel set to false, for Orca set to true
@@ -145,15 +148,15 @@ const bool Z_MIN_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 #define EXTRUDE_MINTEMP 180
 
 // Extruder cooling fans
-#define EXTRUDER_0_AUTO_FAN_PIN   2
-#define EXTRUDER_1_AUTO_FAN_PIN   2
-#define EXTRUDER_2_AUTO_FAN_PIN   -1
+#define EXTRUDER_0_AUTO_FAN_PIN   E0_FAN_PIN
+#define EXTRUDER_1_AUTO_FAN_PIN   E1_FAN_PIN
+#define EXTRUDER_2_AUTO_FAN_PIN   E2_FAN_PIN
 #define EXTRUDER_AUTO_FAN_TEMPERATURE 50
 #define EXTRUDER_AUTO_FAN_SPEED   255  // == full speed
 
 
 //#define PAT9125 //!< Filament sensor
-#define FANCHECK
+//#define FANCHECK
 
 // New XYZ calibration
 #define NEW_XYZCAL
@@ -220,7 +223,7 @@ const bool Z_MIN_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 #define TEMP_RUNAWAY_EXTRUDER_HYSTERESIS 15
 #define TEMP_RUNAWAY_EXTRUDER_TIMEOUT 45
 
-#define PINDA_THERMISTOR
+//#define PINDA_THERMISTOR
 
 /*------------------------------------
  MOTOR CURRENT SETTINGS

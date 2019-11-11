@@ -218,7 +218,7 @@
 
 #define POWER_SUPPLY 1  
 
-
+#define TSWITCH_TONE //Toggles tone on successful T commands (Extruder Switch)
 
 
 

@@ -841,7 +841,7 @@ static float analog2temp(int raw, uint8_t e) {
 
 // Derived from RepRap FiveD extruder::getTemperature()
 // For bed temperature measurement.
-static float analog2tempBed(int raw) {
+static float analog2tempBed(const int raw) {
   #ifdef BED_USES_THERMISTOR
     float celsius = 0;
     byte i;
@@ -938,11 +938,11 @@ static void updateTemperaturesFromRawValues() {
 
 
 void tp_init() {
-  #if MB(RUMBA) && ((TEMP_SENSOR_0==-1)||(TEMP_SENSOR_1==-1)||(TEMP_SENSOR_2==-1)||(TEMP_SENSOR_BED==-1))
-    //disable RUMBA JTAG in case the thermocouple extension is plugged on top of JTAG connector
-    MCUCR=(1<<JTD); 
-    MCUCR=(1<<JTD);
-  #endif
+  // #if MB(RUMBA) && ((TEMP_SENSOR_0==-1)||(TEMP_SENSOR_1==-1)||(TEMP_SENSOR_2==-1)||(TEMP_SENSOR_BED==-1))
+  //   //disable RUMBA JTAG in case the thermocouple extension is plugged on top of JTAG connector
+  //   MCUCR=(1<<JTD); 
+  //   MCUCR=(1<<JTD);
+  // #endif
   
   // Finish init of mult extruder arrays 
   for(int e = 0; e < EXTRUDERS; e++) {
@@ -1251,10 +1251,16 @@ void setWatch() {
 	  	isBed ? LCD_ALERTMESSAGEPGM("BED PREHEAT ERROR") : LCD_ALERTMESSAGEPGM("PREHEAT ERROR");
 		  SERIAL_ERROR_START;
 		  isBed ? SERIAL_ERRORLNPGM(" THERMAL RUNAWAY ( PREHEAT HEATBED)") : SERIAL_ERRORLNPGM(" THERMAL RUNAWAY ( PREHEAT HOTEND)");
-		  SET_OUTPUT(EXTRUDER_0_AUTO_FAN_PIN);
+		  
+      #if defined(EXTRUDER_0_AUTO_FAN_PIN) && (EXTRUDER_0_AUTO_FAN_PIN > -1)
+        SET_OUTPUT(EXTRUDER_0_AUTO_FAN_PIN);
+      #endif
 		  SET_OUTPUT(FAN_PIN);
-		  WRITE(EXTRUDER_0_AUTO_FAN_PIN, 1);
-		  analogWrite(FAN_PIN, 255);
+      #if defined(EXTRUDER_0_AUTO_FAN_PIN) && (EXTRUDER_0_AUTO_FAN_PIN > -1)
+		    WRITE(EXTRUDER_0_AUTO_FAN_PIN, 1);
+		  #endif
+
+      analogWrite(FAN_PIN, 255);
 		  fanSpeed = 255;
 		  delayMicroseconds(2000);
 	  } else {
@@ -1315,14 +1321,23 @@ void max_temp_error(uint8_t e) {
   #ifndef BOGUS_TEMPERATURE_FAILSAFE_OVERRIDE
   Stop();
   #endif
+
+  #if defined(EXTRUDER_0_AUTO_FAN_PIN) && EXTRUDER_0_AUTO_FAN_PIN > -1
     SET_OUTPUT(EXTRUDER_0_AUTO_FAN_PIN);
-    SET_OUTPUT(FAN_PIN);
-    SET_OUTPUT(BEEPER);
-    WRITE(FAN_PIN, 1);
     WRITE(EXTRUDER_0_AUTO_FAN_PIN, 1);
-    WRITE(BEEPER, 1);
-    // fanSpeed will consumed by the check_axes_activity() routine.
-    fanSpeed=255;
+  #endif
+  
+  #if defined(EXTRUDER_1_AUTO_FAN_PIN) && EXTRUDER_1_AUTO_FAN_PIN > -1
+    SET_OUTPUT(EXTRUDER_1_AUTO_FAN_PIN);
+    WRITE(EXTRUDER_1_AUTO_FAN_PIN, 1);
+  #endif
+
+  SET_OUTPUT(FAN_PIN);
+  SET_OUTPUT(BEEPER);
+  WRITE(FAN_PIN, 1);
+  WRITE(BEEPER, 1);
+  // fanSpeed will consumed by the check_axes_activity() routine.
+  fanSpeed=255;
 	if (farm_mode) { prusa_statistics(93); }
 }
 
@@ -1439,22 +1454,21 @@ int read_max6675()
 extern "C" {
 
 void adc_ready(void) { //callback from adc when sampling finished
-	current_temperature_raw[0] = adc_values[TEMP_0_PIN];
-  current_temperature_raw[1] = adc_values[TEMP_1_PIN];
-	current_temperature_bed_raw = adc_values[TEMP_BED_PIN];	
+	current_temperature_raw[0] = adc_values[0];
+  current_temperature_raw[1] = adc_values[1];
+	current_temperature_bed_raw = adc_values[2];	
  	//current_temperature_raw_pinda = analogRead(7);
-   current_temperature_raw_pinda = adc_values[TEMP_PINDA_PIN];
+  current_temperature_raw_pinda = adc_values[3];
   // current_temperature_raw_pinda = adc_values[TEMP_PINDA_PIN];
-  // current_temperature_raw_pinda = analogRead(54 +  7);
-
 #ifdef VOLT_PWR_PIN
-	current_voltage_raw_pwr = adc_values[4];
+	// current_voltage_raw_pwr = adc_values[4];
+  // current_voltage_raw_pwr = analogRead(4);
 #endif
 #ifdef AMBIENT_THERMISTOR
-	current_temperature_raw_ambient = adc_values[5];
+	// current_temperature_raw_ambient = adc_values[5];
 #endif //AMBIENT_THERMISTOR
 #ifdef VOLT_BED_PIN
-	current_voltage_raw_bed = adc_values[6];
+	// current_voltage_raw_bed = adc_values[6];
 #endif
 	temp_meas_ready = true;
 }
@@ -1463,16 +1477,15 @@ void adc_ready(void) { //callback from adc when sampling finished
 
 
 // Timer 0 is shared with millies
-ISR(TIMER0_COMPB_vect)
-{
+ISR(TIMER0_COMPB_vect) {
 	static bool _lock = false;
 	if (_lock) return;
 	_lock = true;
 	asm("sei");
 
-	if (!temp_meas_ready) adc_cycle();
-	else
-	{
+	if (!temp_meas_ready){
+    adc_cycle();
+  } else {
 		check_max_temp();
 		check_min_temp();
 	}
@@ -1515,53 +1528,76 @@ ISR(TIMER0_COMPB_vect)
   /*
    * standard PWM modulation
    */
-  if (pwm_count == 0)
-  {
+  if (pwm_count == 0) {
     soft_pwm_0 = soft_pwm[0];
-    if(soft_pwm_0 > 0)
-	{ 
+    if(soft_pwm_0 > 0) { 
       WRITE(HEATER_0_PIN,1);
-#ifdef HEATERS_PARALLEL
-      WRITE(HEATER_1_PIN,1);
-#endif
-    } else WRITE(HEATER_0_PIN,0);
-#if EXTRUDERS > 1
-    soft_pwm_1 = soft_pwm[1];
-    if(soft_pwm_1 > 0) WRITE(HEATER_1_PIN,1); else WRITE(HEATER_1_PIN,0);
-#endif
-#if EXTRUDERS > 2
-    soft_pwm_2 = soft_pwm[2];
-    if(soft_pwm_2 > 0) WRITE(HEATER_2_PIN,1); else WRITE(HEATER_2_PIN,0);
-#endif
-#if defined(HEATER_BED_PIN) && HEATER_BED_PIN > -1
-    soft_pwm_b = soft_pwm_bed;
-    if(soft_pwm_b > 0) WRITE(HEATER_BED_PIN,1); else WRITE(HEATER_BED_PIN,0);
-#endif
-#ifdef FAN_SOFT_PWM
-    soft_pwm_fan = fanSpeedSoftPwm / 2;
-    if(soft_pwm_fan > 0) WRITE(FAN_PIN,1); else WRITE(FAN_PIN,0);
-#endif
+      #ifdef HEATERS_PARALLEL
+        WRITE(HEATER_1_PIN,1);
+      #endif
+    } else {
+      WRITE(HEATER_0_PIN,0);
+    }
+    #if EXTRUDERS > 1
+      soft_pwm_1 = soft_pwm[1];
+      if(soft_pwm_1 > 0) {
+        WRITE(HEATER_1_PIN,1); 
+        } else {
+          WRITE(HEATER_1_PIN,0); 
+        }
+    #endif
+    #if EXTRUDERS > 2
+      soft_pwm_2 = soft_pwm[2];
+      if(soft_pwm_2 > 0) {
+        WRITE(HEATER_2_PIN,1);
+      } else{ 
+        WRITE(HEATER_2_PIN,0);
+      }
+    #endif
+    #if defined(HEATER_BED_PIN) && HEATER_BED_PIN > -1
+      soft_pwm_b = soft_pwm_bed;
+      if(soft_pwm_b > 0) {
+        WRITE(HEATER_BED_PIN,1);
+      } else {
+        WRITE(HEATER_BED_PIN,0);
+      }
+    #endif
+    #ifdef FAN_SOFT_PWM
+      soft_pwm_fan = fanSpeedSoftPwm / 2;
+      if(soft_pwm_fan > 0) {
+        WRITE(FAN_PIN,1); 
+      } else {
+        WRITE(FAN_PIN,0);
+      }
+    #endif
   }
-  if(soft_pwm_0 < pwm_count)
-  { 
+  if(soft_pwm_0 < pwm_count) { 
     WRITE(HEATER_0_PIN,0);
-#ifdef HEATERS_PARALLEL
-    WRITE(HEATER_1_PIN,0);
-#endif
+    #ifdef HEATERS_PARALLEL
+      WRITE(HEATER_1_PIN,0);
+    #endif
   }
 
-#if EXTRUDERS > 1
-  if(soft_pwm_1 < pwm_count) WRITE(HEATER_1_PIN,0);
-#endif
-#if EXTRUDERS > 2
-  if(soft_pwm_2 < pwm_count) WRITE(HEATER_2_PIN,0);
-#endif
-#if defined(HEATER_BED_PIN) && HEATER_BED_PIN > -1
-  if(soft_pwm_b < pwm_count) WRITE(HEATER_BED_PIN,0);
-#endif
-#ifdef FAN_SOFT_PWM
-  if(soft_pwm_fan < pwm_count) WRITE(FAN_PIN,0);
-#endif
+  #if EXTRUDERS > 1
+    if(soft_pwm_1 < pwm_count) {
+      WRITE(HEATER_1_PIN,0); 
+    }
+  #endif
+  #if EXTRUDERS > 2
+    if(soft_pwm_2 < pwm_count) {
+      WRITE(HEATER_2_PIN,0);
+    }
+  #endif
+  #if defined(HEATER_BED_PIN) && HEATER_BED_PIN > -1
+    if(soft_pwm_b < pwm_count) {
+      WRITE(HEATER_BED_PIN,0); 
+    }
+  #endif
+  #ifdef FAN_SOFT_PWM
+    if(soft_pwm_fan < pwm_count) {
+      WRITE(FAN_PIN,0);
+    }
+  #endif
   
   pwm_count += (1 << SOFT_PWM_SCALE);
   pwm_count &= 0x7f;
@@ -1790,24 +1826,21 @@ ISR(TIMER0_COMPB_vect)
 
   
 #ifdef BABYSTEPPING
-  for(uint8_t axis=0;axis<3;axis++)
-  {
+  for(uint8_t axis=0;axis<3;axis++) {
     int curTodo=babystepsTodo[axis]; //get rid of volatile for performance
    
-    if(curTodo>0)
-    {
+    if(curTodo>0) {
 		asm("cli");
       babystep(axis,/*fwd*/true);
       babystepsTodo[axis]--; //less to do next time
 		asm("sei");
-    }
-    else
-    if(curTodo<0)
-    {
-		asm("cli");
-      babystep(axis,/*fwd*/false);
-      babystepsTodo[axis]++; //less to do next time
-		asm("sei");
+    } else {
+      if(curTodo<0) {
+		    asm("cli");
+        babystep(axis,/*fwd*/false);
+        babystepsTodo[axis]++; //less to do next time
+		    asm("sei");
+      }
     }
   }
 #endif //BABYSTEPPING
@@ -1815,7 +1848,6 @@ ISR(TIMER0_COMPB_vect)
 #if (defined(FANCHECK) && defined(TACH_0) && (TACH_0 > -1))
   check_fans();
 #endif //(defined(TACH_0))
-
 	_lock = false;
 }
 

@@ -1761,7 +1761,7 @@ bool check_commands() {
 //Function to home a given selected axis.
 void homeaxis(int axis) {
 	bool endstops_enabled  = enable_endstops(true); //RP: endstops should be allways enabled durring homming
-  #define HOMEAXIS_DO(LETTER) ((LETTER##_MIN_PIN > -1 && LETTER##_HOME_DIR==-1) || (LETTER##_MAX_PIN > -1 && LETTER##_HOME_DIR==1))
+  #define HOMEAXIS_DO(LETTER) ((LETTER##_MIN_PIN > -1 && LETTER##_HOME_DIR==-1))// || (LETTER##_MAX_PIN > -1 && LETTER##_HOME_DIR==1))
   if ((axis==X_AXIS)?HOMEAXIS_DO(X):(axis==Y_AXIS)?HOMEAXIS_DO(Y):0) {
     int axis_home_dir = home_dir(axis);
     feedrate = homing_feedrate[axis];
@@ -1933,6 +1933,7 @@ void force_high_power_mode(bool start_high_power_section) {
 }
 #endif //TMC2130
 
+//XYZ CALIBRATION 
 bool gcode_M45(bool onlyZ, int8_t verbosity_level) {
 	bool final_result = false;
 	#ifdef TMC2130
@@ -1961,7 +1962,6 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level) {
 	memset(axis_known_position, 0, sizeof(axis_known_position));
 
 	// Home in the XY plane.
-	//set_destination_to_current();
 	setup_for_endstop_move();
 	lcd_display_message_fullscreen_P(MSG_AUTO_HOME);
 	home_xy();
@@ -2013,19 +2013,17 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level) {
 #endif //TMC2130
 		enable_endstops(endstops_enabled);
 
-		if (st_get_position_mm(Z_AXIS) == MESH_HOME_Z_SEARCH)
-		{
+		if (st_get_position_mm(Z_AXIS) == MESH_HOME_Z_SEARCH) {
 
 			int8_t verbosity_level = 0;
-			if (code_seen('V'))
-			{
+			if (code_seen('V')) {
 				// Just 'V' without a number counts as V1.
 				char c = strchr_pointer[1];
 				verbosity_level = (c == ' ' || c == '\t' || c == 0) ? 1 : code_value_short();
 			}
 
-			if (onlyZ)
-			{
+			if (onlyZ) {
+
 				clean_up_after_endstop_move();
 				// Z only calibration.
 				// Load the machine correction matrix
@@ -2034,17 +2032,15 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level) {
 				world2machine_update_current();
 				//FIXME
 				bool result = sample_mesh_and_store_reference();
-				if (result)
-				{
-					if (calibration_status() == CALIBRATION_STATUS_Z_CALIBRATION)
+				if (result) {
+					if (calibration_status() == CALIBRATION_STATUS_Z_CALIBRATION){
 						// Shipped, the nozzle height has been set already. The user can start printing now.
 						calibration_status_store(CALIBRATION_STATUS_CALIBRATED);
 						final_result = true;
+          }
 					// babystep_apply();
 				}
-			}
-			else
-			{
+			} else {
 				// Reset the baby step value and the baby step applied flag.
 				calibration_status_store(CALIBRATION_STATUS_XYZ_CALIBRATION);
 				eeprom_update_word((uint16_t*)EEPROM_BABYSTEP_Z, 0);
@@ -2057,8 +2053,7 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level) {
 				plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], homing_feedrate[Z_AXIS] / 40, active_extruder);
 				st_synchronize();
 				
-				if (result >= 0)
-				{
+				if (result >= 0) {
 					#ifdef HEATBED_V2
 					sample_z();
 					#else //HEATBED_V2
@@ -3846,77 +3841,54 @@ void process_commands() {
           }
         }
       #if defined(FAN_PIN) && FAN_PIN > -1
-        if (pin_number == FAN_PIN)
+        if (pin_number == FAN_PIN){
           fanSpeed = pin_status;
+        }
       #endif
-        if (pin_number > -1)
-        {
+        if (pin_number > -1) {
           pinMode(pin_number, OUTPUT);
           digitalWrite(pin_number, pin_status);
           analogWrite(pin_number, pin_status);
         }
       }
-     break;
+      break;
 #endif //_DISABLE_M42_M226
     case 44: // M44: Prusa3D: Reset the bed skew and offset calibration.
 
-		// Reset the baby step value and the baby step applied flag.
-		calibration_status_store(CALIBRATION_STATUS_ASSEMBLED);
-		eeprom_update_word((uint16_t*)EEPROM_BABYSTEP_Z, 0);
+      // Reset the baby step value and the baby step applied flag.
+      calibration_status_store(CALIBRATION_STATUS_ASSEMBLED);
+      eeprom_update_word((uint16_t*)EEPROM_BABYSTEP_Z, 0);
 
-        // Reset the skew and offset in both RAM and EEPROM.
-        reset_bed_offset_and_skew();
-        // Reset world2machine_rotation_and_skew and world2machine_shift, therefore
-        // the planner will not perform any adjustments in the XY plane. 
-        // Wait for the motors to stop and update the current position with the absolute values.
-        world2machine_revert_to_uncorrected();
-        break;
+      // Reset the skew and offset in both RAM and EEPROM.
+      reset_bed_offset_and_skew();
+      // Reset world2machine_rotation_and_skew and world2machine_shift, therefore
+      // the planner will not perform any adjustments in the XY plane. 
+      // Wait for the motors to stop and update the current position with the absolute values.
+      world2machine_revert_to_uncorrected();
+      break;
 
     case 45: // M45: Prusa3D: bed skew and offset with manual Z up
-    {
-		int8_t verbosity_level = 0;
-		bool only_Z = code_seen('Z');
-		#ifdef SUPPORT_VERBOSITY
-		if (code_seen('V'))
-		{
-			// Just 'V' without a number counts as V1.
-			char c = strchr_pointer[1];
-			verbosity_level = (c == ' ' || c == '\t' || c == 0) ? 1 : code_value_short();
-		}
-		#endif //SUPPORT_VERBOSITY
-		gcode_M45(only_Z, verbosity_level);
-    }
-	break;
-
-    /*
-    case 46:
-    {
-        // M46: Prusa3D: Show the assigned IP address.
-        uint8_t ip[4];
-        bool hasIP = card.ToshibaFlashAir_GetIP(ip);
-        if (hasIP) {
-            SERIAL_ECHOPGM("Toshiba FlashAir current IP: ");
-            SERIAL_ECHO(int(ip[0]));
-            SERIAL_ECHOPGM(".");
-            SERIAL_ECHO(int(ip[1]));
-            SERIAL_ECHOPGM(".");
-            SERIAL_ECHO(int(ip[2]));
-            SERIAL_ECHOPGM(".");
-            SERIAL_ECHO(int(ip[3]));
-            SERIAL_ECHOLNPGM("");
-        } else {
-            SERIAL_ECHOLNPGM("Toshiba FlashAir GetIP failed");          
+      {
+      int8_t verbosity_level = 0;
+      bool only_Z = code_seen('Z');
+      #ifdef SUPPORT_VERBOSITY
+        if (code_seen('V')) {
+          // Just 'V' without a number counts as V1.
+          char c = strchr_pointer[1];
+          verbosity_level = (c == ' ' || c == '\t' || c == 0) ? 1 : code_value_short();
         }
-        break;
-    }
-    */
+      #endif //SUPPORT_VERBOSITY
+      gcode_M45(only_Z, verbosity_level);
+      }
+	    break;
+
 
     case 47:
-        // M47: Prusa3D: Show end stops dialog on the display.
-		KEEPALIVE_STATE(PAUSED_FOR_USER);
-        lcd_diag_show_end_stops();
-		KEEPALIVE_STATE(IN_HANDLER);
-        break;
+      // M47: Prusa3D: Show end stops dialog on the display.
+		  KEEPALIVE_STATE(PAUSED_FOR_USER);
+      lcd_diag_show_end_stops();
+		  KEEPALIVE_STATE(IN_HANDLER);
+      break;
 
 #if 0
     case 48: // M48: scan the bed induction sensor points, print the sensor trigger coordinates to the serial line for visualization on the PC.

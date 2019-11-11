@@ -38,55 +38,50 @@ void xyzcal_update_pos(uint16_t dx, uint16_t dy, uint16_t dz, uint16_t de);
 uint16_t xyzcal_calc_delay(uint16_t nd, uint16_t dd);
 
 
-void xyzcal_meassure_enter(void)
-{
-	DBG(_n("xyzcal_meassure_enter\n"));
-	disable_heater();
-	DISABLE_TEMPERATURE_INTERRUPT();
-#if (defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
+void xyzcal_meassure_enter(void) {
+  DBG(_n("xyzcal_meassure_enter\n"));
+  disable_heater();
+  DISABLE_TEMPERATURE_INTERRUPT();
+  #if (defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
 	DISABLE_FANCHECK_INTERRUPT();
-#endif //(defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
-	DISABLE_STEPPER_DRIVER_INTERRUPT();
-#ifdef WATCHDOG
+  #endif //(defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
+    DISABLE_STEPPER_DRIVER_INTERRUPT();
+  #ifdef WATCHDOG
 	wdt_disable();
-#endif //WATCHDOG
-	sm4_stop_cb = 0;
-	sm4_update_pos_cb = xyzcal_update_pos;
-	sm4_calc_delay_cb = xyzcal_calc_delay;
+  #endif //WATCHDOG
+  sm4_stop_cb = 0;
+  sm4_update_pos_cb = xyzcal_update_pos;
+  sm4_calc_delay_cb = xyzcal_calc_delay;
 }
 
-void xyzcal_meassure_leave(void)
-{
-	DBG(_n("xyzcal_meassure_leave\n"));
-    planner_abort_hard();
-	ENABLE_TEMPERATURE_INTERRUPT();
-#if (defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
+void xyzcal_meassure_leave(void) {
+  DBG(_n("xyzcal_meassure_leave\n"));
+  planner_abort_hard();
+  ENABLE_TEMPERATURE_INTERRUPT();
+  #if (defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
 	ENABLE_FANCHECK_INTERRUPT();
-#endif //(defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
+  #endif //(defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
 	ENABLE_STEPPER_DRIVER_INTERRUPT();
-#ifdef WATCHDOG
+  #ifdef WATCHDOG
 	wdt_enable(WDTO_4S);
-#endif //WATCHDOG
-	sm4_stop_cb = 0;
-	sm4_update_pos_cb = 0;
-	sm4_calc_delay_cb = 0;
+  #endif //WATCHDOG
+  sm4_stop_cb = 0;
+  sm4_update_pos_cb = 0;
+  sm4_calc_delay_cb = 0;
 }
 
 
-uint8_t check_pinda_0()
-{
+uint8_t check_pinda_0() {
 	return _PINDA?0:1;
 }
 
-uint8_t check_pinda_1()
-{
+uint8_t check_pinda_1() {
 	return _PINDA?1:0;
 }
 
 uint8_t xyzcal_dm = 0;
 
-void xyzcal_update_pos(uint16_t dx, uint16_t dy, uint16_t dz, uint16_t de)
-{
+void xyzcal_update_pos(uint16_t dx, uint16_t dy, uint16_t dz, uint16_t de) {
 //	DBG(_n("xyzcal_update_pos dx=%d dy=%d dz=%d dir=%02x\n"), dx, dy, dz, xyzcal_dm);
 	if (xyzcal_dm&1) count_position[0] -= dx; else count_position[0] += dx;
 	if (xyzcal_dm&2) count_position[1] -= dy; else count_position[1] += dy;
@@ -98,134 +93,158 @@ uint16_t xyzcal_sm4_delay = 0;
 
 //#define SM4_ACCEL_TEST
 #ifdef SM4_ACCEL_TEST
-uint16_t xyzcal_sm4_v0 = 2000;
-uint16_t xyzcal_sm4_vm = 45000;
-uint16_t xyzcal_sm4_v = xyzcal_sm4_v0;
-uint16_t xyzcal_sm4_ac = 2000;
-uint16_t xyzcal_sm4_ac2 = (uint32_t)xyzcal_sm4_ac * 1024 / 10000;
-//float xyzcal_sm4_vm = 10000;
+  uint16_t xyzcal_sm4_v0 = 2000;
+  uint16_t xyzcal_sm4_vm = 45000;
+  uint16_t xyzcal_sm4_v = xyzcal_sm4_v0;
+  uint16_t xyzcal_sm4_ac = 2000;
+  uint16_t xyzcal_sm4_ac2 = (uint32_t)xyzcal_sm4_ac * 1024 / 10000;
+  //float xyzcal_sm4_vm = 10000;
 #endif //SM4_ACCEL_TEST
 
-uint16_t xyzcal_calc_delay(uint16_t nd, uint16_t dd)
-{
-	return xyzcal_sm4_delay;
-#ifdef SM4_ACCEL_TEST
+uint16_t xyzcal_calc_delay(uint16_t nd, uint16_t dd) {
+  return xyzcal_sm4_delay;
+  #ifdef SM4_ACCEL_TEST
 
-	uint16_t del_us = 0;
-	if (xyzcal_sm4_v & 0xf000) //>=4096
-	{
-		del_us = (uint16_t)62500 / (uint16_t)(xyzcal_sm4_v >> 4);
-		xyzcal_sm4_v += (xyzcal_sm4_ac2 * del_us + 512) >> 10;
-		if (xyzcal_sm4_v > xyzcal_sm4_vm) xyzcal_sm4_v = xyzcal_sm4_vm;
-		if (del_us > 25) return del_us - 25;
+  uint16_t del_us = 0;
+  if (xyzcal_sm4_v & 0xf000) { //>=4096
+	del_us = (uint16_t)62500 / (uint16_t)(xyzcal_sm4_v >> 4);
+	xyzcal_sm4_v += (xyzcal_sm4_ac2 * del_us + 512) >> 10;
+	if (xyzcal_sm4_v > xyzcal_sm4_vm) {
+	  xyzcal_sm4_v = xyzcal_sm4_vm;
 	}
-	else
-	{
-		del_us = (uint32_t)1000000 / xyzcal_sm4_v;
-		xyzcal_sm4_v += ((uint32_t)xyzcal_sm4_ac2 * del_us + 512) >> 10;
-		if (xyzcal_sm4_v > xyzcal_sm4_vm) xyzcal_sm4_v = xyzcal_sm4_vm;
-		if (del_us > 50) return del_us - 50;
+	if (del_us > 25){
+	  return del_us - 25;
 	}
+  } else {
+	del_us = (uint32_t)1000000 / xyzcal_sm4_v;
+	xyzcal_sm4_v += ((uint32_t)xyzcal_sm4_ac2 * del_us + 512) >> 10;
+	if (xyzcal_sm4_v > xyzcal_sm4_vm) {
+	  xyzcal_sm4_v = xyzcal_sm4_vm;
+	}
+	if (del_us > 50) {
+	  return del_us - 50;
+	}
+  }
 
-//	uint16_t del_us = (uint16_t)(((float)1000000 / xyzcal_sm4_v) + 0.5);		
-//	uint16_t del_us = (uint32_t)1000000 / xyzcal_sm4_v;		
-//	uint16_t del_us = 100;		
-//	uint16_t del_us = (uint16_t)10000 / xyzcal_sm4_v;
-//	v += (ac * del_us + 500) / 1000;
-//	xyzcal_sm4_v += (xyzcal_sm4_ac * del_us) / 1000;
-//	return xyzcal_sm4_delay;
-//	DBG(_n("xyzcal_calc_delay nd=%d dd=%d v=%d  del_us=%d\n"), nd, dd, xyzcal_sm4_v, del_us);
 	return 0;
 #endif //SM4_ACCEL_TEST
 }
 
 
-bool xyzcal_lineXYZ_to(int16_t x, int16_t y, int16_t z, uint16_t delay_us, int8_t check_pinda)
-{
-//	DBG(_n("xyzcal_lineXYZ_to x=%d y=%d z=%d  check=%d\n"), x, y, z, check_pinda);
-	x -= (int16_t)count_position[0];
-	y -= (int16_t)count_position[1];
-	z -= (int16_t)count_position[2];
-	xyzcal_dm = ((x<0)?1:0) | ((y<0)?2:0) | ((z<0)?4:0);
-	sm4_set_dir_bits(xyzcal_dm);
-	sm4_stop_cb = check_pinda?((check_pinda<0)?check_pinda_0:check_pinda_1):0;
-	xyzcal_sm4_delay = delay_us;
-//	uint32_t u = micros();
-	bool ret = sm4_line_xyze_ui(abs(x), abs(y), abs(z), 0)?true:false;
-//	u = micros() - u;
-	return ret;
+bool xyzcal_lineXYZ_to(int16_t x, int16_t y, int16_t z, uint16_t delay_us, int8_t check_pinda) {
+
+  //	DBG(_n("xyzcal_lineXYZ_to x=%d y=%d z=%d  check=%d\n"), x, y, z, check_pinda);
+  x -= (int16_t)count_position[0];
+  y -= (int16_t)count_position[1];
+  z -= (int16_t)count_position[2];
+  xyzcal_dm = ((x<0)?1:0) | ((y<0)?2:0) | ((z<0)?4:0);
+  sm4_set_dir_bits(xyzcal_dm);
+  sm4_stop_cb = check_pinda?((check_pinda<0)?check_pinda_0:check_pinda_1):0;
+  xyzcal_sm4_delay = delay_us;
+  //	uint32_t u = micros();
+  bool ret = sm4_line_xyze_ui(abs(x), abs(y), abs(z), 0)?true:false;
+  //	u = micros() - u;
+  return ret;
+  
 }
 
-bool xyzcal_spiral2(int16_t cx, int16_t cy, int16_t z0, int16_t dz, int16_t radius, int16_t rotation, uint16_t delay_us, int8_t check_pinda, uint16_t* pad)
-{
-	bool ret = false;
-	float r = 0; //radius
-	uint8_t n = 0; //point number
-	uint16_t ad = 0; //angle [deg]
-	float ar; //angle [rad]
-	uint8_t dad = 0; //delta angle [deg]
-	uint8_t dad_min = 4; //delta angle min [deg]
-	uint8_t dad_max = 16; //delta angle max [deg]
-	uint8_t k = 720 / (dad_max - dad_min); //delta calculation constant
-	ad = 0;
-	if (pad) ad = *pad % 720;
-	DBG(_n("xyzcal_spiral2 cx=%d cy=%d z0=%d dz=%d radius=%d ad=%d\n"), cx, cy, z0, dz, radius, ad);
-	for (; ad < 720; ad++)
-	{
-		if (radius > 0)
-		{
-			dad = dad_max - (ad / k);
-			r = (float)(((uint32_t)ad) * radius) / 720;
-		}
-		else
-		{
-			dad = dad_max - ((719 - ad) / k);
-			r = (float)(((uint32_t)(719 - ad)) * (-radius)) / 720;
-		}
-		ar = (ad + rotation)* (float)_PI / 180;
-		float _cos = cos(ar);
-		float _sin = sin(ar);
-		int x = (int)(cx + (_cos * r));
-		int y = (int)(cy + (_sin * r));
-		int z = (int)(z0 - ((float)((int32_t)dz * ad) / 720));
-		if (xyzcal_lineXYZ_to(x, y, z, delay_us, check_pinda))
-		{
-			ad += dad + 1;
-			ret = true;
-			break;
-		}
-		n++;
-		ad += dad;
+bool xyzcal_spiral2(int16_t cx, int16_t cy, int16_t z0, int16_t dz, int16_t radius, int16_t rotation, uint16_t delay_us, int8_t check_pinda, uint16_t* pad) {
+  
+  bool ret = false;
+  float r = 0; //radius
+  uint8_t n = 0; //point number
+  uint16_t ad = 0; //angle [deg]
+  float ar; //angle [rad]
+  uint8_t dad = 0; //delta angle [deg]
+  uint8_t dad_min = 4; //delta angle min [deg]
+  uint8_t dad_max = 16; //delta angle max [deg]
+  uint8_t k = 720 / (dad_max - dad_min); //delta calculation constant
+  ad = 0;
+  
+  if (pad) {
+	ad = *pad % 720;
+  }
+
+  DBG(_n("xyzcal_spiral2 cx=%d cy=%d z0=%d dz=%d radius=%d ad=%d\n"), cx, cy, z0, dz, radius, ad);
+
+  for (; ad < 720; ad++) {
+
+	if (radius > 0) {
+      dad = dad_max - (ad / k);
+	  r = (float)(((uint32_t)ad) * radius) / 720;
+	} else {
+	  dad = dad_max - ((719 - ad) / k);
+	  r = (float)(((uint32_t)(719 - ad)) * (-radius)) / 720;
 	}
-	if (pad) *pad = ad;
-	return ret;
+
+	ar = (ad + rotation)* (float)_PI / 180;
+	float _cos = cos(ar);
+	float _sin = sin(ar);
+	int x = (int)(cx + (_cos * r));
+	int y = (int)(cy + (_sin * r));
+	int z = (int)(z0 - ((float)((int32_t)dz * ad) / 720));
+	if (xyzcal_lineXYZ_to(x, y, z, delay_us, check_pinda)) {
+	  ad += dad + 1;
+	  ret = true;
+	  break;
+	}
+	n++;
+	ad += dad;
+  }
+
+  if (pad) {
+    *pad = ad;
+  }
+
+  return ret;
 }
 
-bool xyzcal_spiral8(int16_t cx, int16_t cy, int16_t z0, int16_t dz, int16_t radius, uint16_t delay_us, int8_t check_pinda, uint16_t* pad)
-{
-	bool ret = false;
-	uint16_t ad = 0;
-	if (pad) ad = *pad;
-	DBG(_n("xyzcal_spiral8 cx=%d cy=%d z0=%d dz=%d radius=%d ad=%d\n"), cx, cy, z0, dz, radius, ad);
-	if (!ret && (ad < 720))
-		if (ret = xyzcal_spiral2(cx, cy, z0 - 0*dz, dz, radius, 0, delay_us, check_pinda, &ad))
-			ad += 0;
-	if (!ret && (ad < 1440))
-		if (ret = xyzcal_spiral2(cx, cy, z0 - 1*dz, dz, -radius, 0, delay_us, check_pinda, &ad))
-			ad += 720;
-	if (!ret && (ad < 2160))
-		if (ret = xyzcal_spiral2(cx, cy, z0 - 2*dz, dz, radius, 180, delay_us, check_pinda, &ad))
-			ad += 1440;
-	if (!ret && (ad < 2880))
-		if (ret = xyzcal_spiral2(cx, cy, z0 - 3*dz, dz, -radius, 180, delay_us, check_pinda, &ad))
-			ad += 2160;
-	if (pad) *pad = ad;
-	return ret;
-}
+bool xyzcal_spiral8(int16_t cx, int16_t cy, int16_t z0, int16_t dz, int16_t radius, uint16_t delay_us, int8_t check_pinda, uint16_t* pad) {
+  bool ret = false;
+  uint16_t ad = 0;
+
+  if (pad) {
+	ad = *pad;
+  }
+
+  DBG(_n("xyzcal_spiral8 cx=%d cy=%d z0=%d dz=%d radius=%d ad=%d\n"), cx, cy, z0, dz, radius, ad);
+
+  if (!ret && (ad < 720)){
+	if (ret = xyzcal_spiral2(cx, cy, z0 - 0*dz, dz, radius, 0, delay_us, check_pinda, &ad)){
+	  ad += 0;
+	}
+  }
+
+  if (!ret && (ad < 1440)){
+    if (ret = xyzcal_spiral2(cx, cy, z0 - 1*dz, dz, -radius, 0, delay_us, check_pinda, &ad)){
+	  ad += 720;
+    }
+  }
+
+  if (!ret && (ad < 2160)){
+	if (ret = xyzcal_spiral2(cx, cy, z0 - 2*dz, dz, radius, 180, delay_us, check_pinda, &ad)){
+	  ad += 1440;
+	}
+  }
+
+  if (!ret && (ad < 2880)){
+	if (ret = xyzcal_spiral2(cx, cy, z0 - 3*dz, dz, -radius, 180, delay_us, check_pinda, &ad)){
+	  ad += 2160;
+	}
+  }
+
+  if (pad) {
+	*pad = ad;
+  }
+
+  return ret;
+} //xyzcal_spiral8
+
+
 
 #ifdef XYZCAL_MEASSURE_PINDA_HYSTEREZIS
-int8_t xyzcal_meassure_pinda_hysterezis(int16_t min_z, int16_t max_z, uint16_t delay_us, uint8_t samples)
-{
+int8_t xyzcal_meassure_pinda_hysterezis(int16_t min_z, int16_t max_z, uint16_t delay_us, uint8_t samples) {
+
 	DBG(_n("xyzcal_meassure_pinda_hysterezis\n"));
 	int8_t ret = -1; // PINDA signal error
 	int16_t z = _Z;
@@ -274,27 +293,23 @@ int8_t xyzcal_meassure_pinda_hysterezis(int16_t min_z, int16_t max_z, uint16_t d
 #endif //XYZCAL_MEASSURE_PINDA_HYSTEREZIS
 
 
-void xyzcal_scan_pixels_32x32(int16_t cx, int16_t cy, int16_t min_z, int16_t max_z, uint16_t delay_us, uint8_t* pixels)
-{
+void xyzcal_scan_pixels_32x32(int16_t cx, int16_t cy, int16_t min_z, int16_t max_z, uint16_t delay_us, uint8_t* pixels) {
 	DBG(_n("xyzcal_scan_pixels_32x32 cx=%d cy=%d min_z=%d max_z=%d\n"), cx, cy, min_z, max_z);
 //	xyzcal_lineXYZ_to(cx - 1024, cy - 1024, max_z, 2*delay_us, 0);
 //	xyzcal_lineXYZ_to(cx, cy, max_z, delay_us, 0);
 	int16_t z = (int16_t)count_position[2];
 	xyzcal_lineXYZ_to(cx, cy, z, 2*delay_us, 0);
-	for (uint8_t r = 0; r < 32; r++)
-	{
+	for (uint8_t r = 0; r < 32; r++) {
 		int8_t _pinda = _PINDA;
 		xyzcal_lineXYZ_to((r&1)?(cx+1024):(cx-1024), cy - 1024 + r*64, z, 2*delay_us, 0);
 		xyzcal_lineXYZ_to(_X, _Y, min_z, delay_us, 1);
 		xyzcal_lineXYZ_to(_X, _Y, max_z, delay_us, -1);
 		z = (int16_t)count_position[2];
 		sm4_set_dir(X_AXIS, (r&1)?1:0);
-		for (uint8_t c = 0; c < 32; c++)
-		{
+		for (uint8_t c = 0; c < 32; c++) {
 			uint16_t sum = 0;
 			int16_t z_sum = 0;
-			for (uint8_t i = 0; i < 64; i++)
-			{
+			for (uint8_t i = 0; i < 64; i++) {
 				int8_t pinda = _PINDA;
 				int16_t pix = z - min_z;
 				pix += (pinda)?23:-24;
@@ -310,18 +325,14 @@ void xyzcal_scan_pixels_32x32(int16_t cx, int16_t cy, int16_t min_z, int16_t max
 //						DBG(_n("!0 x=%d z=%d\n"), c*64+i, z-24);
 //				}
 				sm4_set_dir(Z_AXIS, !pinda);
-				if (!pinda)
-				{
+				if (!pinda) {
 					if (z > min_z)
 					{
 						sm4_do_step(Z_AXIS_MASK);
 						z--;
 					}
-				}
-				else
-				{
-					if (z < max_z)
-					{
+				} else {
+					if (z < max_z) {
 						sm4_do_step(Z_AXIS_MASK);
 						z++;
 					}
@@ -331,22 +342,25 @@ void xyzcal_scan_pixels_32x32(int16_t cx, int16_t cy, int16_t min_z, int16_t max
 				_pinda = pinda;
 			}
 			sum >>= 6; //div 64
-			if (z_sum < 0)
-			{
+			if (z_sum < 0) {
 				z_sum = -z_sum;
 				z_sum >>= 6; //div 64
 				z_sum = -z_sum;
+			} else {
+			  z_sum >>= 6; //div 64
 			}
-			else
-				z_sum >>= 6; //div 64
-			if (pixels) pixels[((uint16_t)r<<5) + ((r&1)?(31-c):c)] = sum;
+			if (pixels){
+			  pixels[((uint16_t)r<<5) + ((r&1)?(31-c):c)] = sum;
+			}
 //			DBG(_n("c=%d r=%d l=%d z=%d\n"), c, r, sum, z_sum);
 			count_position[0] += (r&1)?-64:64;
 			count_position[2] = z;
 		}
-		if (pixels)
-			for (uint8_t c = 0; c < 32; c++)
-				DBG(_n("%02x"), pixels[((uint16_t)r<<5) + c]);
+		if (pixels){
+		  for (uint8_t c = 0; c < 32; c++){
+		    DBG(_n("%02x"), pixels[((uint16_t)r<<5) + c]);
+		  }
+		}
 		DBG(_n("\n"));
 	}
 //	xyzcal_lineXYZ_to(cx, cy, z, 2*delay_us, 0);

@@ -7,7 +7,7 @@
 
 
 #if defined(__cplusplus)
-extern "C" {
+  extern "C" {
 #endif //defined(__cplusplus)
 
 
@@ -16,6 +16,12 @@ extern uint8_t adc_count;
 extern uint16_t adc_values[ADC_CHAN_CNT];
 extern uint16_t adc_sim_mask;
 
+// #define BITCOUNT(x) (((BX_(x)+(BX_(x)>>4)) & 0x0F0F0F0F) % 255)
+// #define BX_(x) ((x) - (((x)>>1)&0x77777777) - (((x)>>2)&0x33333333) - (((x)>>3)&0x11111111))
+
+// #define ADC_PIN_IDX(pin) BITCOUNT(ADC_CHAN_MSK & ((1 << (pin)) - 1))
+
+#define ADC_PIN_IDX(pin) pin
 
 extern void adc_init(void);
 
@@ -29,6 +35,6 @@ extern void adc_cycle(void);
 
 
 #if defined(__cplusplus)
-}
+  }
 #endif //defined(__cplusplus)
 #endif //_ADC_H

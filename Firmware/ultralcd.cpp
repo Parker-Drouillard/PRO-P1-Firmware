@@ -2985,10 +2985,13 @@ static void lcd_show_end_stops() {
 	lcd_printPGM((PSTR("End stops diag")));
 	lcd.setCursor(0, 1);
 	lcd_printPGM((READ(X_MIN_PIN) ^ X_MIN_ENDSTOP_INVERTING == 1) ? (PSTR("X1")) : (PSTR("X0")));
+	lcd_printPGM((READ(FIL_RUNOUT_PIN) ^ FIL_RUNOUT_PIN_INVERTING == 1) ? (PSTR("     E1:1")) : (PSTR("     E1:0")));
 	lcd.setCursor(0, 2);
 	lcd_printPGM((READ(Y_MIN_PIN) ^ Y_MIN_ENDSTOP_INVERTING == 1) ? (PSTR("Y1")) : (PSTR("Y0")));
+	lcd_printPGM((READ(FIL_RUNOUT2_PIN) ^ FIL_RUNOUT2_PIN_INVERTING == 1) ? (PSTR("     E2:1")) : (PSTR("     E2:0")));
 	lcd.setCursor(0, 3);
 	lcd_printPGM((READ(Z_MIN_PIN) ^ Z_MIN_ENDSTOP_INVERTING == 1) ? (PSTR("Z1")) : (PSTR("Z0")));
+	
 }
 
 static void menu_show_end_stops() {
@@ -6205,10 +6208,15 @@ static bool lcd_selftest_manual_fan_check(int _fan, bool check_opposite)
 	case 0:
 		// extruder cooling fan
 		lcd.setCursor(0, 1); 
-		if(check_opposite == true) lcd_printPGM(MSG_SELFTEST_COOLING_FAN); 
-		else lcd_printPGM(MSG_SELFTEST_EXTRUDER_FAN);
-		SET_OUTPUT(EXTRUDER_0_AUTO_FAN_PIN);
-		WRITE(EXTRUDER_0_AUTO_FAN_PIN, 1);
+		if(check_opposite == true) {
+		  lcd_printPGM(MSG_SELFTEST_COOLING_FAN); 
+		} else {
+		  lcd_printPGM(MSG_SELFTEST_EXTRUDER_FAN);
+		}
+		#if defined(EXTRUDER_0_AUTO_FAN_PIN) && (EXTRUDER_0_AUTO_FAN_PIN > -1)
+		  SET_OUTPUT(EXTRUDER_0_AUTO_FAN_PIN);
+		  WRITE(EXTRUDER_0_AUTO_FAN_PIN, 1);
+		#endif
 		break;
 	case 1:
 		// object cooling fan
@@ -6233,8 +6241,10 @@ static bool lcd_selftest_manual_fan_check(int _fan, bool check_opposite)
 		{
 		case 0:
 			// extruder cooling fan
-			SET_OUTPUT(EXTRUDER_0_AUTO_FAN_PIN);
-			WRITE(EXTRUDER_0_AUTO_FAN_PIN, 1);
+			#if defined(EXTRUDER_0_AUTO_FAN_PIN) && (EXTRUDER_0_AUTO_FAN_PIN > -1)
+			  SET_OUTPUT(EXTRUDER_0_AUTO_FAN_PIN);
+			  WRITE(EXTRUDER_0_AUTO_FAN_PIN, 1);
+			#endif
 			break;
 		case 1:
 			// object cooling fan
@@ -6269,8 +6279,14 @@ static bool lcd_selftest_manual_fan_check(int _fan, bool check_opposite)
 
 	} while (!lcd_clicked());
 	KEEPALIVE_STATE(IN_HANDLER);
-	SET_OUTPUT(EXTRUDER_0_AUTO_FAN_PIN);
-	WRITE(EXTRUDER_0_AUTO_FAN_PIN, 0);
+	#if defined(EXTRUDER_0_AUTO_FAN_PIN) && (EXTRUDER_0_AUTO_FAN_PIN > -1)
+	  SET_OUTPUT(EXTRUDER_0_AUTO_FAN_PIN);
+	  WRITE(EXTRUDER_0_AUTO_FAN_PIN, 0);
+	#endif
+	#if defined(EXTRUDER_1_AUTO_FAN_PIN) && (EXTRUDER_1_AUTO_FAN_PIN > -1)
+      SET_OUTPUT(EXTRUDER_1_AUTO_FAN_PIN);
+      WRITE(EXTRUDER_1_AUTO_FAN_PIN, 0);
+	#endif
 	SET_OUTPUT(FAN_PIN);
 	analogWrite(FAN_PIN, 0);
 

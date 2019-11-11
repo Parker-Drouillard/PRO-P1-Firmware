@@ -90,22 +90,20 @@ extern int current_voltage_raw_bed;
   extern volatile int babystepsTodo[3];
 #endif
 
-inline void babystepsTodoZadd(int n)
-{
-    if (n != 0) {
-        CRITICAL_SECTION_START
-        babystepsTodo[Z_AXIS] += n;
-        CRITICAL_SECTION_END
-    }
+inline void babystepsTodoZadd(int n) {
+  if (n != 0) {
+    CRITICAL_SECTION_START
+    babystepsTodo[Z_AXIS] += n;
+    CRITICAL_SECTION_END
+  }
 }
 
-inline void babystepsTodoZsubtract(int n)
-{
-    if (n != 0) {
-        CRITICAL_SECTION_START
-        babystepsTodo[Z_AXIS] -= n;
-        CRITICAL_SECTION_END
-    }
+inline void babystepsTodoZsubtract(int n) {
+  if (n != 0) {
+    CRITICAL_SECTION_START
+    babystepsTodo[Z_AXIS] -= n;
+    CRITICAL_SECTION_END
+  }
 }
 
 //high level conversion routines, for use outside of temperature.cpp
@@ -207,8 +205,7 @@ void updatePID();
 
 FORCE_INLINE void autotempShutdown(){
  #ifdef AUTOTEMP
- if(autotemp_enabled)
- {
+ if(autotemp_enabled) {
   autotemp_enabled=false;
   if(degTargetHotend(active_extruder)>autotemp_min)
     setTargetHotend(0,active_extruder);
@@ -222,13 +219,13 @@ void setExtruderAutoFanState(int pin, bool state);
 void checkExtruderAutoFans();
 
 
-#if (defined(FANCHECK) && defined(TACH_0) && (TACH_0 > -1))
+#if (defined(FAzNCHECK) && defined(TACH_0) && (TACH_0 > -1))
 
-void countFanSpeed();
-void checkFanSpeed();
-void fanSpeedError(unsigned char _fan);
+  void countFanSpeed();
+  void checkFanSpeed();
+  void fanSpeedError(unsigned char _fan);
 
-void check_fans();
+  void check_fans();
 
 #endif //(defined(TACH_0))
 
