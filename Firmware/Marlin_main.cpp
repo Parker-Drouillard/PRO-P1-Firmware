@@ -1978,18 +1978,24 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level) {
   #else //TMC2130
 	  if (lcd_calibrate_z_end_stop_manual(onlyZ)) {
   #endif //TMC2130
+	
 	    refresh_cmd_timeout();
+  
   #ifndef STEEL_SHEET
 	    if (((degHotend(0) > MAX_HOTEND_TEMP_CALIBRATION) || (degHotend(1) > MAX_HOTEND_TEMP_CALIBRATION)|| (degBed() > MAX_BED_TEMP_CALIBRATION)) && (!onlyZ)) {
   		  lcd_wait_for_cool_down();
 	    }
 	#endif //STEEL_SHEET
+	
 	    if(!onlyZ) {
 	      KEEPALIVE_STATE(PAUSED_FOR_USER);
 	#ifdef STEEL_SHEET
 		    bool result = lcd_show_fullscreen_message_yes_no_and_wait_P(MSG_STEEL_SHEET_CHECK, false, false);
 	#endif //STEEL_SHEET
-			  if(result) lcd_show_fullscreen_message_and_wait_P(MSG_REMOVE_STEEL_SHEET);
+	  if(result) {
+      lcd_show_fullscreen_message_and_wait_P(MSG_REMOVE_STEEL_SHEET);
+    }
+
 			  lcd_show_fullscreen_message_and_wait_P(MSG_CONFIRM_NOZZLE_CLEAN);
 		    lcd_show_fullscreen_message_and_wait_P(MSG_PAPER);
 			  KEEPALIVE_STATE(IN_HANDLER);
@@ -2078,26 +2084,23 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level) {
 				lcd_update(2);
 				
 				lcd_bed_calibration_show_result(result, point_too_far_mask);
-				if (result >= 0)
-				{
+			if (result >= 0) {
 					// Calibration valid, the machine should be able to print. Advise the user to run the V2Calibration.gcode.
 					calibration_status_store(CALIBRATION_STATUS_LIVE_ADJUST);
-					if (eeprom_read_byte((uint8_t*)EEPROM_WIZARD_ACTIVE) != 1) lcd_show_fullscreen_message_and_wait_P(MSG_BABYSTEP_Z_NOT_SET);
+				if (eeprom_read_byte((uint8_t*)EEPROM_WIZARD_ACTIVE) != 1) {
+          lcd_show_fullscreen_message_and_wait_P(MSG_BABYSTEP_Z_NOT_SET);
+        }
 					final_result = true;
 				}
 			}
 #ifdef TMC2130
 			tmc2130_home_exit();
 #endif
-		}
-		else
-		{
+		} else {
 			lcd_show_fullscreen_message_and_wait_P(PSTR("Calibration failed! Check the axes and run again."));
 			final_result = false;
 		}
-	}
-	else
-	{
+	} else {
 		// Timeouted.
 	}
 	lcd_update_enable(true);
@@ -2105,10 +2108,11 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level) {
 	FORCE_HIGH_POWER_END;
 #endif // TMC2130
 	return final_result;
-}
+} //gcode_M45
 
-void gcode_M114()
-{
+
+
+void gcode_M114() {
 	SERIAL_PROTOCOLPGM("X:");
 	SERIAL_PROTOCOL(current_position[X_AXIS]);
 	SERIAL_PROTOCOLPGM(" Y:");

@@ -2991,12 +2991,13 @@ static void lcd_show_end_stops() {
 	lcd_printPGM((READ(FIL_RUNOUT2_PIN) ^ FIL_RUNOUT2_PIN_INVERTING == 1) ? (PSTR("     E2:1")) : (PSTR("     E2:0")));
 	lcd.setCursor(0, 3);
 	lcd_printPGM((READ(Z_MIN_PIN) ^ Z_MIN_ENDSTOP_INVERTING == 1) ? (PSTR("Z1")) : (PSTR("Z0")));
-	
 }
 
 static void menu_show_end_stops() {
     lcd_show_end_stops();
-    if (LCD_CLICKED) lcd_goto_menu(lcd_calibration_menu); //doesn't break menuStack
+  if (LCD_CLICKED) {
+	lcd_goto_menu(lcd_calibration_menu); //doesn't break menuStack
+  }
 }
 
 // Lets the user move the Z carriage up to the end stoppers.
