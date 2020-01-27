@@ -922,11 +922,10 @@ extern bool xyzcal_find_bed_induction_sensor_point_xy();
 #endif //HEATBED_V2
 
 #ifdef HEATBED_V2
-inline bool find_bed_induction_sensor_point_xy(int verbosity_level)
-{
-#ifdef NEW_XYZCAL
+inline bool find_bed_induction_sensor_point_xy(int verbosity_level) {
+  #ifdef NEW_XYZCAL
 	return xyzcal_find_bed_induction_sensor_point_xy();
-#else //NEW_XYZCAL
+  #else //NEW_XYZCAL
 	#ifdef SUPPORT_VERBOSITY
 	if (verbosity_level >= 10) MYSERIAL.println("find bed induction sensor point xy");
 	#endif // SUPPORT_VERBOSITY
@@ -2016,78 +2015,80 @@ inline void scan_bed_induction_sensor_point()
 
 #define MESH_BED_CALIBRATION_SHOW_LCD
 
-BedSkewOffsetDetectionResultType find_bed_offset_and_skew(int8_t verbosity_level, uint8_t &too_far_mask)
-{	
-    // Don't let the manage_inactivity() function remove power from the motors.
-    refresh_cmd_timeout();
+BedSkewOffsetDetectionResultType find_bed_offset_and_skew(int8_t verbosity_level, uint8_t &too_far_mask) {	
+  // Don't let the manage_inactivity() function remove power from the motors.
+  refresh_cmd_timeout();
 
-    // Reusing the z_values memory for the measurement cache.
-    // 7x7=49 floats, good for 16 (x,y,z) vectors.
-    float *pts = &mbl.z_values[0][0];
-    float *vec_x = pts + 2 * 4;
-    float *vec_y = vec_x + 2;
-    float *cntr  = vec_y + 2;
-    memset(pts, 0, sizeof(float) * 7 * 7);
-	uint8_t iteration = 0; 
-	BedSkewOffsetDetectionResultType result;
+//   printf("STARTING XYZ FULL CALIBRATION\n");
 
-//    SERIAL_ECHOLNPGM("find_bed_offset_and_skew verbosity level: ");
-//    SERIAL_ECHO(int(verbosity_level));
-//    SERIAL_ECHOPGM("");
+  // Reusing the z_values memory for the measurement cache.
+  // 7x7=49 floats, good for 16 (x,y,z) vectors.
+  float *pts = &mbl.z_values[0][0];
+  float *vec_x = pts + 2 * 4;
+  float *vec_y = vec_x + 2;
+  float *cntr  = vec_y + 2;
+  memset(pts, 0, sizeof(float) * 7 * 7);
+  uint8_t iteration = 0; 
+  BedSkewOffsetDetectionResultType result;
+
+  //    SERIAL_ECHOLNPGM("find_bed_offset_and_skew verbosity level: ");
+  //    SERIAL_ECHO(int(verbosity_level));
+  //    SERIAL_ECHOPGM("");
 	
-#ifdef NEW_XYZCAL
+  #ifdef NEW_XYZCAL
 	{
-#else //NEW_XYZCAL
+  #else //NEW_XYZCAL
 	while (iteration < 3) {
-#endif //NEW_XYZCAL
+  #endif //NEW_XYZCAL
 
-		SERIAL_ECHOPGM("Iteration: ");
-		MYSERIAL.println(int(iteration + 1));
-		#ifdef SUPPORT_VERBOSITY
+	  SERIAL_ECHOPGM("Iteration: ");
+	  MYSERIAL.println(int(iteration + 1));
+	  #ifdef SUPPORT_VERBOSITY
 		if (verbosity_level >= 20) {
-		SERIAL_ECHOLNPGM("Vectors: ");
+	      SERIAL_ECHOLNPGM("Vectors: ");
 		
-			SERIAL_ECHOPGM("vec_x[0]:");
-			MYSERIAL.print(vec_x[0], 5);
-			SERIAL_ECHOLNPGM("");
-			SERIAL_ECHOPGM("vec_x[1]:");
-			MYSERIAL.print(vec_x[1], 5);
-			SERIAL_ECHOLNPGM("");
-			SERIAL_ECHOPGM("vec_y[0]:");
-			MYSERIAL.print(vec_y[0], 5);
-			SERIAL_ECHOLNPGM("");
-			SERIAL_ECHOPGM("vec_y[1]:");
-			MYSERIAL.print(vec_y[1], 5);
-			SERIAL_ECHOLNPGM("");
-			SERIAL_ECHOPGM("cntr[0]:");
-			MYSERIAL.print(cntr[0], 5);
-			SERIAL_ECHOLNPGM("");
-			SERIAL_ECHOPGM("cntr[1]:");
-			MYSERIAL.print(cntr[1], 5);
-			SERIAL_ECHOLNPGM("");
+		  SERIAL_ECHOPGM("vec_x[0]:");
+		  MYSERIAL.print(vec_x[0], 5);
+		  SERIAL_ECHOLNPGM("");
+		  SERIAL_ECHOPGM("vec_x[1]:");
+		  MYSERIAL.print(vec_x[1], 5);
+		  SERIAL_ECHOLNPGM("");
+		  SERIAL_ECHOPGM("vec_y[0]:");
+		  MYSERIAL.print(vec_y[0], 5);
+		  SERIAL_ECHOLNPGM("");
+		  SERIAL_ECHOPGM("vec_y[1]:");
+		  MYSERIAL.print(vec_y[1], 5);
+		  SERIAL_ECHOLNPGM("");
+		  SERIAL_ECHOPGM("cntr[0]:");
+		  MYSERIAL.print(cntr[0], 5);
+		  SERIAL_ECHOLNPGM("");
+		  SERIAL_ECHOPGM("cntr[1]:");
+		  MYSERIAL.print(cntr[1], 5);
+		  SERIAL_ECHOLNPGM("");
 		}
-		#endif // SUPPORT_VERBOSITY
-#ifdef MESH_BED_CALIBRATION_SHOW_LCD
-    uint8_t next_line;
-    lcd_display_message_fullscreen_P(MSG_FIND_BED_OFFSET_AND_SKEW_LINE1, next_line);
-    if (next_line > 3)
-        next_line = 3;
-#endif /* MESH_BED_CALIBRATION_SHOW_LCD */
+	  #endif // SUPPORT_VERBOSITY
+      #ifdef MESH_BED_CALIBRATION_SHOW_LCD
+        uint8_t next_line;
+        lcd_display_message_fullscreen_P(MSG_FIND_BED_OFFSET_AND_SKEW_LINE1, next_line);
+        if (next_line > 3){
+          next_line = 3;
+        }
+      #endif /* MESH_BED_CALIBRATION_SHOW_LCD */
 
-    // Collect the rear 2x3 points.
-	current_position[Z_AXIS] = MESH_HOME_Z_SEARCH + FIND_BED_INDUCTION_SENSOR_POINT_Z_STEP * iteration * 0.3;
-	for (int k = 0; k < 4; ++k) {
+      // Collect the rear 2x3 points.
+	  current_position[Z_AXIS] = MESH_HOME_Z_SEARCH + FIND_BED_INDUCTION_SENSOR_POINT_Z_STEP * iteration * 0.3;
+	  for (int k = 0; k < 4; ++k) {
 		// Don't let the manage_inactivity() function remove power from the motors.
 		refresh_cmd_timeout();
-#ifdef MESH_BED_CALIBRATION_SHOW_LCD
-		lcd_implementation_print_at(0, next_line, k + 1);
-		lcd_printPGM(MSG_FIND_BED_OFFSET_AND_SKEW_LINE2);
+        #ifdef MESH_BED_CALIBRATION_SHOW_LCD
+		  lcd_implementation_print_at(0, next_line, k + 1);
+		  lcd_printPGM(MSG_FIND_BED_OFFSET_AND_SKEW_LINE2);
 
-		if (iteration > 0) {
+		  if (iteration > 0) {
 			lcd_print_at_PGM(0, next_line + 1, MSG_FIND_BED_OFFSET_AND_SKEW_ITERATION);
 			lcd_implementation_print(int(iteration + 1));
-		}
-#endif /* MESH_BED_CALIBRATION_SHOW_LCD */
+		  }
+        #endif /* MESH_BED_CALIBRATION_SHOW_LCD */
 		float *pt = pts + k * 2;
 		// Go up to z_initial.
 
@@ -2107,8 +2108,8 @@ BedSkewOffsetDetectionResultType find_bed_offset_and_skew(int8_t verbosity_level
 		#endif // SUPPORT_VERBOSITY
 		// Go to the measurement point position.
 		//if (iteration == 0) {
-			current_position[X_AXIS] = pgm_read_float(bed_ref_points_4 + k * 2);
-			current_position[Y_AXIS] = pgm_read_float(bed_ref_points_4 + k * 2 + 1);
+        current_position[X_AXIS] = pgm_read_float(bed_ref_points_4 + k * 2);
+        current_position[Y_AXIS] = pgm_read_float(bed_ref_points_4 + k * 2 + 1);
 		/*}
 		else {
 			// if first iteration failed, count corrected point coordinates as initial
@@ -2123,7 +2124,7 @@ BedSkewOffsetDetectionResultType find_bed_offset_and_skew(int8_t verbosity_level
 
 		}*/
 		#ifdef SUPPORT_VERBOSITY
-		if (verbosity_level >= 20) {
+		  if (verbosity_level >= 20) {
 			SERIAL_ECHOPGM("current_position[X_AXIS]:");
 			MYSERIAL.print(current_position[X_AXIS], 5);
 			SERIAL_ECHOLNPGM("");
@@ -2133,13 +2134,14 @@ BedSkewOffsetDetectionResultType find_bed_offset_and_skew(int8_t verbosity_level
 			SERIAL_ECHOPGM("current_position[Z_AXIS]:");
 			MYSERIAL.print(current_position[Z_AXIS], 5);
 			SERIAL_ECHOLNPGM("");
-		}
+		  }
 		#endif // SUPPORT_VERBOSITY
 
 		go_to_current(homing_feedrate[X_AXIS] / 60.f);
 		#ifdef SUPPORT_VERBOSITY
-		if (verbosity_level >= 10)
+		  if (verbosity_level >= 10){
 			delay_keep_alive(3000);
+          }
 		#endif // SUPPORT_VERBOSITY
 		if (!find_bed_induction_sensor_point_xy(verbosity_level))
 			return BED_SKEW_OFFSET_DETECTION_POINT_NOT_FOUND;

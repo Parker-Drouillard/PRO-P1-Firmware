@@ -1940,7 +1940,7 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level) {
 	FORCE_HIGH_POWER_START;
 	#endif // TMC2130
 	// Only Z calibration?
-	if (!onlyZ) {
+	if (!onlyZ) { //If not just bed mesh leveling - IE XYZ CALL FULL
 		setTargetBed(0);
 		setTargetHotend(0, 0);
 		setTargetHotend(0, 1);
@@ -1979,134 +1979,132 @@ bool gcode_M45(bool onlyZ, int8_t verbosity_level) {
 	  if (lcd_calibrate_z_end_stop_manual(onlyZ)) {
   #endif //TMC2130
 	
-	    refresh_cmd_timeout();
+	  refresh_cmd_timeout();
   
-  #ifndef STEEL_SHEET
+    #ifndef STEEL_SHEET
 	    if (((degHotend(0) > MAX_HOTEND_TEMP_CALIBRATION) || (degHotend(1) > MAX_HOTEND_TEMP_CALIBRATION)|| (degBed() > MAX_BED_TEMP_CALIBRATION)) && (!onlyZ)) {
-  		  lcd_wait_for_cool_down();
+  	    lcd_wait_for_cool_down();
 	    }
-	#endif //STEEL_SHEET
+	  #endif //STEEL_SHEET
 	
-	    if(!onlyZ) {
-	      KEEPALIVE_STATE(PAUSED_FOR_USER);
-	#ifdef STEEL_SHEET
+	  if(!onlyZ) { //if Full XYZ
+	    KEEPALIVE_STATE(PAUSED_FOR_USER);
+	    #ifdef STEEL_SHEET
 		    bool result = lcd_show_fullscreen_message_yes_no_and_wait_P(MSG_STEEL_SHEET_CHECK, false, false);
-	#endif //STEEL_SHEET
-	  if(result) {
-      lcd_show_fullscreen_message_and_wait_P(MSG_REMOVE_STEEL_SHEET);
-    }
+	    #endif //STEEL_SHEET
+	    if(result) {
+        lcd_show_fullscreen_message_and_wait_P(MSG_REMOVE_STEEL_SHEET);
+      }
 
-			  lcd_show_fullscreen_message_and_wait_P(MSG_CONFIRM_NOZZLE_CLEAN);
-		    lcd_show_fullscreen_message_and_wait_P(MSG_PAPER);
-			  KEEPALIVE_STATE(IN_HANDLER);
-			  lcd_display_message_fullscreen_P(MSG_FIND_BED_OFFSET_AND_SKEW_LINE1);
-			  lcd_implementation_print_at(0, 2, 1);
-			  lcd_printPGM(MSG_FIND_BED_OFFSET_AND_SKEW_LINE2);
+	  	lcd_show_fullscreen_message_and_wait_P(MSG_CONFIRM_NOZZLE_CLEAN);
+	  	lcd_show_fullscreen_message_and_wait_P(MSG_PAPER);
+	  	KEEPALIVE_STATE(IN_HANDLER);
+		  lcd_display_message_fullscreen_P(MSG_FIND_BED_OFFSET_AND_SKEW_LINE1);
+		  lcd_implementation_print_at(0, 2, 1);
+		  lcd_printPGM(MSG_FIND_BED_OFFSET_AND_SKEW_LINE2);
+  	}
+	  // Move the print head close to the bed.
+	  current_position[Z_AXIS] = MESH_HOME_Z_SEARCH;
+
+	  bool endstops_enabled  = enable_endstops(true);
+    #ifdef TMC2130
+		  tmc2130_home_enter(Z_AXIS_MASK);
+    #endif //TMC2130
+
+	  plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], homing_feedrate[Z_AXIS] / 40, active_extruder);
+
+	  st_synchronize();
+    #ifdef TMC2130
+		  tmc2130_home_exit();
+    #endif //TMC2130
+	  enable_endstops(endstops_enabled);
+
+	  if (st_get_position_mm(Z_AXIS) == MESH_HOME_Z_SEARCH) {
+		  int8_t verbosity_level = 0;
+		  if (code_seen('V')) {
+			  // Just 'V' without a number counts as V1.
+			  char c = strchr_pointer[1];
+			  verbosity_level = (c == ' ' || c == '\t' || c == 0) ? 1 : code_value_short();
 		  }
-		  // Move the print head close to the bed.
-		  current_position[Z_AXIS] = MESH_HOME_Z_SEARCH;
 
-		  bool endstops_enabled  = enable_endstops(true);
-  #ifdef TMC2130
-		tmc2130_home_enter(Z_AXIS_MASK);
-#endif //TMC2130
-
-		plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], homing_feedrate[Z_AXIS] / 40, active_extruder);
-
-		st_synchronize();
-#ifdef TMC2130
-		tmc2130_home_exit();
-#endif //TMC2130
-		enable_endstops(endstops_enabled);
-
-		if (st_get_position_mm(Z_AXIS) == MESH_HOME_Z_SEARCH) {
-
-			int8_t verbosity_level = 0;
-			if (code_seen('V')) {
-				// Just 'V' without a number counts as V1.
-				char c = strchr_pointer[1];
-				verbosity_level = (c == ' ' || c == '\t' || c == 0) ? 1 : code_value_short();
-			}
-
-			if (onlyZ) {
-
-				clean_up_after_endstop_move();
-				// Z only calibration.
-				// Load the machine correction matrix
-				world2machine_initialize();
-				// and correct the current_position to match the transformed coordinate system.
-				world2machine_update_current();
-				//FIXME
-				bool result = sample_mesh_and_store_reference();
-				if (result) {
-					if (calibration_status() == CALIBRATION_STATUS_Z_CALIBRATION){
-						// Shipped, the nozzle height has been set already. The user can start printing now.
-						calibration_status_store(CALIBRATION_STATUS_CALIBRATED);
-						final_result = true;
+  		if (onlyZ) { //NOT FULL XYZ, ONLY MESH
+	  		clean_up_after_endstop_move();
+		  	// Z only calibration.
+			  // Load the machine correction matrix
+			  world2machine_initialize();
+			  // and correct the current_position to match the transformed coordinate system.
+			  world2machine_update_current();
+			  //FIXME
+			  bool result = sample_mesh_and_store_reference();
+			  if (result) {
+				  if (calibration_status() == CALIBRATION_STATUS_Z_CALIBRATION){
+					  // Shipped, the nozzle height has been set already. The user can start printing now.
+					  calibration_status_store(CALIBRATION_STATUS_CALIBRATED);
+					  final_result = true;
           }
-					// babystep_apply();
-				}
-			} else {
-				// Reset the baby step value and the baby step applied flag.
-				calibration_status_store(CALIBRATION_STATUS_XYZ_CALIBRATION);
-				eeprom_update_word((uint16_t*)EEPROM_BABYSTEP_Z, 0);
-				// Complete XYZ calibration.
-				uint8_t point_too_far_mask = 0;
-				BedSkewOffsetDetectionResultType result = find_bed_offset_and_skew(verbosity_level, point_too_far_mask);
-				clean_up_after_endstop_move();
-				// Print head up.
-				current_position[Z_AXIS] = MESH_HOME_Z_SEARCH;
-				plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], homing_feedrate[Z_AXIS] / 40, active_extruder);
-				st_synchronize();
+				  // babystep_apply();
+			  }
+		  } else { //IF FULL XYZ CALIBRATION
+			  // Reset the baby step value and the baby step applied flag.
+			  calibration_status_store(CALIBRATION_STATUS_XYZ_CALIBRATION);
+			  eeprom_update_word((uint16_t*)EEPROM_BABYSTEP_Z, 0);
+			  // Complete XYZ calibration.
+			  uint8_t point_too_far_mask = 0;
+			  BedSkewOffsetDetectionResultType result = find_bed_offset_and_skew(verbosity_level, point_too_far_mask);
+			  clean_up_after_endstop_move();
+			  // Print head up.
+			  current_position[Z_AXIS] = MESH_HOME_Z_SEARCH;
+			  plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], homing_feedrate[Z_AXIS] / 40, active_extruder);
+			  st_synchronize();
+			
+			  if (result >= 0) {
+				  #ifdef HEATBED_V2
+  			  	sample_z();
+				  #else //HEATBED_V2
+					  point_too_far_mask = 0;
+					  // Second half: The fine adjustment.
+					  // Let the planner use the uncorrected coordinates.
+					  mbl.reset();
+					  world2machine_reset();
+					  // Home in the XY plane.
+					  setup_for_endstop_move();
+					  home_xy();
+					  result = improve_bed_offset_and_skew(1, verbosity_level, point_too_far_mask);
+					  clean_up_after_endstop_move();
+					  // Print head up.
+					  current_position[Z_AXIS] = MESH_HOME_Z_SEARCH;
+					  plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], homing_feedrate[Z_AXIS] / 40, active_extruder);
+					  st_synchronize();
+					  // if (result >= 0) babystep_apply();					
+				  #endif //HEATBED_V2
+			  }
+			  lcd_update_enable(true);
+			  lcd_update(2);
 				
-				if (result >= 0) {
-					#ifdef HEATBED_V2
-					sample_z();
-					#else //HEATBED_V2
-					point_too_far_mask = 0;
-					// Second half: The fine adjustment.
-					// Let the planner use the uncorrected coordinates.
-					mbl.reset();
-					world2machine_reset();
-					// Home in the XY plane.
-					setup_for_endstop_move();
-					home_xy();
-					result = improve_bed_offset_and_skew(1, verbosity_level, point_too_far_mask);
-					clean_up_after_endstop_move();
-					// Print head up.
-					current_position[Z_AXIS] = MESH_HOME_Z_SEARCH;
-					plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], homing_feedrate[Z_AXIS] / 40, active_extruder);
-					st_synchronize();
-					// if (result >= 0) babystep_apply();					
-					#endif //HEATBED_V2
-				}
-				lcd_update_enable(true);
-				lcd_update(2);
-				
-				lcd_bed_calibration_show_result(result, point_too_far_mask);
-			if (result >= 0) {
-					// Calibration valid, the machine should be able to print. Advise the user to run the V2Calibration.gcode.
-					calibration_status_store(CALIBRATION_STATUS_LIVE_ADJUST);
-				if (eeprom_read_byte((uint8_t*)EEPROM_WIZARD_ACTIVE) != 1) {
-          lcd_show_fullscreen_message_and_wait_P(MSG_BABYSTEP_Z_NOT_SET);
-        }
+			  lcd_bed_calibration_show_result(result, point_too_far_mask);
+			  if (result >= 0) {
+				  // Calibration valid, the machine should be able to print. Advise the user to run the V2Calibration.gcode.
+				  calibration_status_store(CALIBRATION_STATUS_LIVE_ADJUST);
+			    if (eeprom_read_byte((uint8_t*)EEPROM_WIZARD_ACTIVE) != 1) {
+            lcd_show_fullscreen_message_and_wait_P(MSG_BABYSTEP_Z_NOT_SET);
+          }
 					final_result = true;
-				}
-			}
-#ifdef TMC2130
-			tmc2130_home_exit();
-#endif
-		} else {
-			lcd_show_fullscreen_message_and_wait_P(PSTR("Calibration failed! Check the axes and run again."));
-			final_result = false;
-		}
-	} else {
-		// Timeouted.
-	}
+			  }
+		  }
+      #ifdef TMC2130
+			  tmc2130_home_exit();
+      #endif
+	  } else {
+		  lcd_show_fullscreen_message_and_wait_P(PSTR("Calibration failed! Check the axes and run again."));
+		  final_result = false;
+	  }
+  } else {
+	  // Timeouted.
+  }
 	lcd_update_enable(true);
-#ifdef TMC2130
-	FORCE_HIGH_POWER_END;
-#endif // TMC2130
+  #ifdef TMC2130
+	  FORCE_HIGH_POWER_END;
+  #endif // TMC2130
 	return final_result;
 } //gcode_M45
 
@@ -3874,7 +3872,7 @@ void process_commands() {
     case 45: // M45: Prusa3D: bed skew and offset with manual Z up
       {
       int8_t verbosity_level = 0;
-      bool only_Z = code_seen('Z');
+      bool only_Z = code_seen('Z'); //mesh bed leveling - NO XYZ CAL
       #ifdef SUPPORT_VERBOSITY
         if (code_seen('V')) {
           // Just 'V' without a number counts as V1.

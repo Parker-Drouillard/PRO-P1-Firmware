@@ -144,8 +144,7 @@
 // #define KILL_PIN           -1
 // #define SDSS               53
 
-// #define BEEPER 79
-  #define BEEPER 74
+ #define BEEPER 79
 
 // LCD / Controller
 //

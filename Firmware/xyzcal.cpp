@@ -40,12 +40,13 @@ uint16_t xyzcal_calc_delay(uint16_t nd, uint16_t dd);
 
 void xyzcal_meassure_enter(void) {
   DBG(_n("xyzcal_meassure_enter\n"));
+  printf("xyzcal_meassure_enter\n");
   disable_heater();
   DISABLE_TEMPERATURE_INTERRUPT();
   #if (defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
 	DISABLE_FANCHECK_INTERRUPT();
   #endif //(defined(FANCHECK) && defined(TACH_1) && (TACH_1 >-1))
-    DISABLE_STEPPER_DRIVER_INTERRUPT();
+  DISABLE_STEPPER_DRIVER_INTERRUPT();
   #ifdef WATCHDOG
 	wdt_disable();
   #endif //WATCHDOG
@@ -83,9 +84,10 @@ uint8_t xyzcal_dm = 0;
 
 void xyzcal_update_pos(uint16_t dx, uint16_t dy, uint16_t dz, uint16_t de) {
 //	DBG(_n("xyzcal_update_pos dx=%d dy=%d dz=%d dir=%02x\n"), dx, dy, dz, xyzcal_dm);
-	if (xyzcal_dm&1) count_position[0] -= dx; else count_position[0] += dx;
-	if (xyzcal_dm&2) count_position[1] -= dy; else count_position[1] += dy;
-	if (xyzcal_dm&4) count_position[2] -= dz; else count_position[2] += dz;
+//   printf("xyzcal_update_pos dx=%d dy=%d dz=%d dir=%02x\n", dx, dy, dz, xyzcal_dm);
+  (xyzcal_dm&1) ? count_position[0] -= dx : count_position[0] += dx;
+  (xyzcal_dm&2) ? count_position[1] -= dy : count_position[1] += dy;
+  (xyzcal_dm&4) ? count_position[2] -= dz : count_position[2] += dz;
 //	DBG(_n(" after xyzcal_update_pos x=%ld y=%ld z=%ld\n"), count_position[0], count_position[1], count_position[2]);
 }
 
